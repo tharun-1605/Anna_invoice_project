@@ -47,8 +47,15 @@ class InvoiceStore {
     return ref.set(client.toJson(), SetOptions(merge: true));
   }
 
-  Future<void> saveInvoice(Invoice invoice) =>
-      db.collection('invoices').add(invoice.toJson());
+  Future<void> saveInvoice(Invoice invoice) {
+    final ref = invoice.id.isEmpty
+        ? db.collection('invoices').doc()
+        : db.collection('invoices').doc(invoice.id);
+    return ref.set(invoice.toJson(), SetOptions(merge: true));
+  }
+
+  Future<void> deleteInvoice(String id) =>
+      db.collection('invoices').doc(id).delete();
 
   Future<void> savePackage(StudioPackage package) {
     final ref = package.id.isEmpty

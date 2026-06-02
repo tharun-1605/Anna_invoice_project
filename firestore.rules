@@ -103,8 +103,8 @@ service cloud.firestore {
     }
 
     match /invoices/{invoiceId} {
-      allow read: if true;
-      allow create: if isInvoice(request.resource.data);
+      allow read, delete: if true;
+      allow create, update: if isInvoice(request.resource.data);
     }
   }
 }
