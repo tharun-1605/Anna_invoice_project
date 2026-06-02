@@ -9,11 +9,12 @@ class PageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+
+        if (isMobile) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -25,11 +26,37 @@ class PageHeader extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(subtitle, style: const TextStyle(color: Color(0xFF6B7280))),
+              if (action != null) ...[
+                const SizedBox(height: 16),
+                action!,
+              ],
             ],
-          ),
-        ),
-        ?action,
-      ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF111827),
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(subtitle, style: const TextStyle(color: Color(0xFF6B7280))),
+                ],
+              ),
+            ),
+            if (action != null) action!,
+          ],
+        );
+      },
     );
   }
 }

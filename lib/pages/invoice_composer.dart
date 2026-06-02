@@ -215,7 +215,10 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
             ],
           ),
           const SizedBox(height: 18),
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
             children: [
               Text(
                 'Items',
@@ -223,13 +226,13 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                       fontWeight: FontWeight.w800,
                     ),
               ),
-              const Spacer(),
               if (widget.packages.isNotEmpty)
                 PopupMenuButton<StudioPackage>(
                   tooltip: 'Add from packages',
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.inventory_2_outlined,
@@ -249,11 +252,17 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                   ),
                   onSelected: (pkg) {
                     setState(() {
+                      final lines = [
+                        if (pkg.description.isNotEmpty)
+                          '${pkg.name} - ${pkg.description}'
+                        else
+                          pkg.name,
+                        ...pkg.items,
+                      ];
+                      
                       items.add(
                         _ItemDraft(
-                          description: pkg.description.isNotEmpty
-                              ? '${pkg.name} - ${pkg.description}'
-                              : pkg.name,
+                          description: lines.join('\n'),
                           price: pkg.price.toString(),
                           quantity: '1',
                         ),
@@ -436,48 +445,111 @@ class _ItemEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 5,
-            child: TextFormField(
-              controller: item.description,
-              minLines: 1,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Description'),
-              validator: requiredField,
-              onChanged: (_) => onChanged(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        if (isMobile) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: item.description,
+                          minLines: 1,
+                          maxLines: 3,
+                          decoration: const InputDecoration(labelText: 'Description'),
+                          validator: requiredField,
+                          onChanged: (_) => onChanged(),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Remove item',
+                        onPressed: canRemove ? onRemove : null,
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: item.quantity,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Qty'),
+                          onChanged: (_) => onChanged(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: item.price,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Price'),
+                          onChanged: (_) => onChanged(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 5,
+                child: TextFormField(
+                  controller: item.description,
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  validator: requiredField,
+                  onChanged: (_) => onChanged(),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  controller: item.quantity,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Qty'),
+                  onChanged: (_) => onChanged(),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: item.price,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Price'),
+                  onChanged: (_) => onChanged(),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Remove item',
+                onPressed: canRemove ? onRemove : null,
+                icon: const Icon(Icons.delete_outline),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextFormField(
-              controller: item.quantity,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Qty'),
-              onChanged: (_) => onChanged(),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            flex: 2,
-            child: TextFormField(
-              controller: item.price,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Price'),
-              onChanged: (_) => onChanged(),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Remove item',
-            onPressed: canRemove ? onRemove : null,
-            icon: const Icon(Icons.delete_outline),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -544,26 +616,52 @@ class _InvoicePreview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 22),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _AddressBlock(invoice.company.name, [
-                  invoice.company.address,
-                  invoice.company.phone,
-                  invoice.company.email,
-                ]),
-              ),
-              Expanded(
-                child: _AddressBlock('BILL TO', [
-                  invoice.client.name,
-                  invoice.client.phone,
-                  invoice.client.email,
-                  invoice.client.address,
-                ]),
-              ),
-              Expanded(child: _Facts(invoice)),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+              if (isMobile) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _AddressBlock(invoice.company.name, [
+                      invoice.company.address,
+                      invoice.company.phone,
+                      invoice.company.email,
+                    ]),
+                    const SizedBox(height: 16),
+                    _AddressBlock('BILL TO', [
+                      invoice.client.name,
+                      invoice.client.phone,
+                      invoice.client.email,
+                      invoice.client.address,
+                    ]),
+                    const SizedBox(height: 16),
+                    _Facts(invoice, alignEnd: false),
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _AddressBlock(invoice.company.name, [
+                      invoice.company.address,
+                      invoice.company.phone,
+                      invoice.company.email,
+                    ]),
+                  ),
+                  Expanded(
+                    child: _AddressBlock('BILL TO', [
+                      invoice.client.name,
+                      invoice.client.phone,
+                      invoice.client.email,
+                      invoice.client.address,
+                    ]),
+                  ),
+                  Expanded(child: _Facts(invoice)),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
           _PreviewTable(invoice: invoice),
@@ -615,35 +713,37 @@ class _AddressBlock extends StatelessWidget {
 }
 
 class _Facts extends StatelessWidget {
-  const _Facts(this.invoice);
+  const _Facts(this.invoice, {this.alignEnd = true});
 
   final Invoice invoice;
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        _FactLine('Invoice #', invoice.number),
-        _FactLine('Date', dateFormatter.format(invoice.date)),
-        _FactLine('Due date', dateFormatter.format(invoice.dueDate)),
+        _FactLine('Invoice #', invoice.number, alignEnd: alignEnd),
+        _FactLine('Date', dateFormatter.format(invoice.date), alignEnd: alignEnd),
+        _FactLine('Due date', dateFormatter.format(invoice.dueDate), alignEnd: alignEnd),
       ],
     );
   }
 }
 
 class _FactLine extends StatelessWidget {
-  const _FactLine(this.label, this.value);
+  const _FactLine(this.label, this.value, {this.alignEnd = true});
 
   final String label;
   final String value;
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(label, style: const TextStyle(color: Color(0xFF6B7280))),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),

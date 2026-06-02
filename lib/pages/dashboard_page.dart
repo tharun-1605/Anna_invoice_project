@@ -60,37 +60,48 @@ class DashboardPage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 22),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: Panel(
-                title: 'Recent invoices',
-                child: invoices.isEmpty
-                    ? const EmptyState('No invoices yet')
-                    : Column(
-                        children: invoices.take(6).map(CompactInvoiceRow.new).toList(),
-                      ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 800;
+            final recentInvoices = Panel(
+              title: 'Recent invoices',
+              child: invoices.isEmpty
+                  ? const EmptyState('No invoices yet')
+                  : Column(
+                      children: invoices.take(6).map(CompactInvoiceRow.new).toList(),
+                    ),
+            );
+            final quickStatus = Panel(
+              title: 'Quick status',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  StatusLine('Companies', companies.length.toString()),
+                  StatusLine('Paid collected', money.format(paid)),
+                  const StatusLine('Firestore', 'Connected'),
+                  const StatusLine('Plan', 'Free resources only'),
+                ],
               ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              flex: 2,
-              child: Panel(
-                title: 'Quick status',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StatusLine('Companies', companies.length.toString()),
-                    StatusLine('Paid collected', money.format(paid)),
-                    const StatusLine('Firestore', 'Connected'),
-                    const StatusLine('Plan', 'Free resources only'),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            );
+
+            if (isMobile) {
+              return Column(
+                children: [
+                  recentInvoices,
+                  const SizedBox(height: 18),
+                  quickStatus,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: recentInvoices),
+                const SizedBox(width: 18),
+                Expanded(flex: 2, child: quickStatus),
+              ],
+            );
+          },
         ),
       ],
     );

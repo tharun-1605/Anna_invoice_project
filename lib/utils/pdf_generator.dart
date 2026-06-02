@@ -81,7 +81,7 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
           ),
           headerDecoration: const pw.BoxDecoration(color: PdfColors.black),
           cellStyle: const pw.TextStyle(fontSize: 10),
-          cellAlignment: pw.Alignment.centerLeft,
+          cellAlignment: pw.Alignment.topLeft,
           columnWidths: {
             0: const pw.FlexColumnWidth(5),
             1: const pw.FlexColumnWidth(1.4),

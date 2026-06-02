@@ -79,27 +79,179 @@ Future<void> showPackageDialog(
   InvoiceStore store, [
   StudioPackage? package,
 ]) async {
-  final nameCtrl = TextEditingController(text: package?.name);
-  final descCtrl = TextEditingController(text: package?.description);
-  final priceCtrl = TextEditingController(text: package?.price.toString() ?? '');
-
-  await showEntityDialog(
+  await showDialog<void>(
     context: context,
-    title: package == null ? 'New Package' : 'Edit Package',
-    fields: [
-      DialogField('Package name', nameCtrl),
-      DialogField('Description', descCtrl, lines: 3),
-      DialogField('Price', priceCtrl),
-    ],
-    onSave: () => store.savePackage(
-      StudioPackage(
-        id: package?.id ?? '',
-        name: nameCtrl.text.trim(),
-        description: descCtrl.text.trim(),
-        price: double.tryParse(priceCtrl.text) ?? 0,
-      ),
+    builder: (context) => _PackageDialog(
+      store: store,
+      package: package,
     ),
   );
+}
+
+class _PackageDialog extends StatefulWidget {
+  const _PackageDialog({required this.store, this.package});
+
+  final InvoiceStore store;
+  final StudioPackage? package;
+
+  @override
+  State<_PackageDialog> createState() => _PackageDialogState();
+}
+
+class _PackageDialogState extends State<_PackageDialog> {
+  final formKey = GlobalKey<FormState>();
+  late final TextEditingController nameCtrl;
+  late final TextEditingController descCtrl;
+  late final TextEditingController priceCtrl;
+  final List<TextEditingController> itemCtrls = [];
+  bool saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameCtrl = TextEditingController(text: widget.package?.name);
+    descCtrl = TextEditingController(text: widget.package?.description);
+    priceCtrl = TextEditingController(text: widget.package?.price.toString() ?? '');
+    
+    if (widget.package != null && widget.package!.items.isNotEmpty) {
+      for (final item in widget.package!.items) {
+        itemCtrls.add(TextEditingController(text: item));
+      }
+    } else {
+      itemCtrls.add(TextEditingController());
+    }
+  }
+
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    descCtrl.dispose();
+    priceCtrl.dispose();
+    for (final ctrl in itemCtrls) {
+      ctrl.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.package == null ? 'New Package' : 'Edit Package'),
+      content: Form(
+        key: formKey,
+        child: SizedBox(
+          width: 460,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Package name'),
+                  validator: requiredField,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: descCtrl,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: priceCtrl,
+                  decoration: const InputDecoration(labelText: 'Price'),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Package Items', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          itemCtrls.add(TextEditingController());
+                        });
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Item'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...itemCtrls.indexed.map((entry) {
+                  final index = entry.$1;
+                  final ctrl = entry.$2;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: ctrl,
+                            decoration: InputDecoration(labelText: 'Item ${index + 1}'),
+                            validator: requiredField,
+                          ),
+                        ),
+                        if (itemCtrls.length > 1)
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                itemCtrls.removeAt(index).dispose();
+                              });
+                            },
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: saving ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: saving
+              ? null
+              : () async {
+                  if (!formKey.currentState!.validate()) return;
+                  setState(() => saving = true);
+                  try {
+                    await widget.store.savePackage(
+                      StudioPackage(
+                        id: widget.package?.id ?? '',
+                        name: nameCtrl.text.trim(),
+                        description: descCtrl.text.trim(),
+                        price: double.tryParse(priceCtrl.text) ?? 0,
+                        items: itemCtrls
+                            .map((c) => c.text.trim())
+                            .where((text) => text.isNotEmpty)
+                            .toList(),
+                      ),
+                    );
+                    if (context.mounted) Navigator.pop(context);
+                  } catch (error) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Save failed: $error')),
+                      );
+                    }
+                    setState(() => saving = false);
+                  }
+                },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
 }
 
 Future<void> showEntityDialog({

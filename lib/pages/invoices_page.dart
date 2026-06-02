@@ -60,6 +60,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     final query = _searchCtrl.text.toLowerCase();
     final minAmt = double.tryParse(_minCtrl.text) ?? 0.0;
     final maxAmt = double.tryParse(_maxCtrl.text) ?? double.infinity;
@@ -115,13 +116,10 @@ class _InvoicesPageState extends State<InvoicesPage> {
         const SizedBox(height: 18),
         Panel(
           title: 'Filters',
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: _FilterField(
+          child: isMobile
+              ? Column(
+                  children: [
+                    _FilterField(
                       'Search',
                       TextField(
                         controller: _searchCtrl,
@@ -133,105 +131,213 @@ class _InvoicesPageState extends State<InvoicesPage> {
                         onChanged: (_) => setState(() {}),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _FilterField(
-                      'Month',
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedMonth,
-                        decoration: const InputDecoration(isDense: true),
-                        items: _months
-                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _selectedMonth = v!),
-                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _FilterField(
+                            'Month',
+                            DropdownButtonFormField<String>(
+                              initialValue: _selectedMonth,
+                              decoration: const InputDecoration(isDense: true),
+                              items: _months.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                              onChanged: (v) => setState(() => _selectedMonth = v!),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _FilterField(
+                            'Year',
+                            DropdownButtonFormField<String>(
+                              initialValue: _selectedYear,
+                              decoration: const InputDecoration(isDense: true),
+                              items: years.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                              onChanged: (v) => setState(() => _selectedYear = v!),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _FilterField(
-                      'Year',
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedYear,
-                        decoration: const InputDecoration(isDense: true),
-                        items: years
-                            .map((y) => DropdownMenuItem(value: y, child: Text(y)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _selectedYear = v!),
-                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _FilterField(
+                            'Min Amount',
+                            TextField(
+                              controller: _minCtrl,
+                              decoration: const InputDecoration(isDense: true),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _FilterField(
+                            'Max Amount',
+                            TextField(
+                              controller: _maxCtrl,
+                              decoration: const InputDecoration(isDense: true),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _FilterField(
-                      'Min Amount',
-                      TextField(
-                        controller: _minCtrl,
-                        decoration: const InputDecoration(isDense: true),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _FilterField(
-                      'Max Amount',
-                      TextField(
-                        controller: _maxCtrl,
-                        decoration: const InputDecoration(isDense: true),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _FilterField(
+                    const SizedBox(height: 12),
+                    _FilterField(
                       'Payment',
                       DropdownButtonFormField<String>(
                         initialValue: _selectedStatus,
                         decoration: const InputDecoration(isDense: true),
-                        items: ['All', 'Paid', 'Partially Paid', 'Unpaid']
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                            .toList(),
+                        items: ['All', 'Paid', 'Partially Paid', 'Unpaid'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                         onChanged: (v) => setState(() => _selectedStatus = v!),
                       ),
                     ),
-                  ),
-                  const Spacer(flex: 4),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _FilterField(
+                            'Search',
+                            TextField(
+                              controller: _searchCtrl,
+                              decoration: const InputDecoration(
+                                hintText: 'Invoice, client, company, amount',
+                                prefixIcon: Icon(Icons.search, size: 20),
+                                isDense: true,
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _FilterField(
+                            'Month',
+                            DropdownButtonFormField<String>(
+                              initialValue: _selectedMonth,
+                              decoration: const InputDecoration(isDense: true),
+                              items: _months.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                              onChanged: (v) => setState(() => _selectedMonth = v!),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _FilterField(
+                            'Year',
+                            DropdownButtonFormField<String>(
+                              initialValue: _selectedYear,
+                              decoration: const InputDecoration(isDense: true),
+                              items: years.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                              onChanged: (v) => setState(() => _selectedYear = v!),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _FilterField(
+                            'Min Amount',
+                            TextField(
+                              controller: _minCtrl,
+                              decoration: const InputDecoration(isDense: true),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _FilterField(
+                            'Max Amount',
+                            TextField(
+                              controller: _maxCtrl,
+                              decoration: const InputDecoration(isDense: true),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _FilterField(
+                            'Payment',
+                            DropdownButtonFormField<String>(
+                              initialValue: _selectedStatus,
+                              decoration: const InputDecoration(isDense: true),
+                              items: ['All', 'Paid', 'Partially Paid', 'Unpaid'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                              onChanged: (v) => setState(() => _selectedStatus = v!),
+                            ),
+                          ),
+                        ),
+                        const Spacer(flex: 4),
+                      ],
+                    ),
+                  ],
+                ),
         ),
         const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: MetricCard('Filtered Total', money.format(filteredTotal), Icons.receipt),
-            ),
-            Expanded(
-              child: MetricCard(
-                'Paid',
-                money.format(filteredPaid),
-                Icons.check_circle_outline,
-                color: Colors.green,
+        isMobile
+            ? Column(
+                children: [
+                  MetricCard('Filtered Total', money.format(filteredTotal), Icons.receipt),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: MetricCard(
+                          'Paid',
+                          money.format(filteredPaid),
+                          Icons.check_circle_outline,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: MetricCard(
+                          'Balance',
+                          money.format(filteredBalance),
+                          Icons.account_balance_wallet,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: MetricCard('Filtered Total', money.format(filteredTotal), Icons.receipt),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: MetricCard(
+                      'Paid',
+                      money.format(filteredPaid),
+                      Icons.check_circle_outline,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: MetricCard(
+                      'Balance',
+                      money.format(filteredBalance),
+                      Icons.account_balance_wallet,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Expanded(
-              child: MetricCard(
-                'Balance',
-                money.format(filteredBalance),
-                Icons.account_balance_wallet,
-                color: Colors.red,
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 18),
         filtered.isEmpty
             ? const EmptyState('No invoices match your filters')
@@ -352,12 +458,28 @@ class InvoiceActionRow extends StatelessWidget {
     );
   }
 
+  void _viewPdf(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text('Invoice ${invoice.number}')),
+          body: PdfPreview(
+            build: (format) => buildInvoicePdf(invoice),
+            allowPrinting: true,
+            allowSharing: true,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final statusColor = invoice.due == 0
         ? Colors.green
         : (invoice.paid > 0 ? Colors.orange : Colors.red);
     final statusText = _invoiceStatus(invoice);
+    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -367,106 +489,223 @@ class InvoiceActionRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
+      child: isMobile
+          ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  invoice.number,
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-                ),
-                const SizedBox(height: 6),
-                Text('Client: ${invoice.client.name}', style: const TextStyle(color: Colors.black87)),
-                Text('Company: ${invoice.company.name}', style: const TextStyle(color: Colors.black87)),
-                const SizedBox(height: 6),
-                Text(
-                  'Date: ${dateFormatter.format(invoice.date)}',
-                  style: const TextStyle(color: Colors.black54),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Total', style: TextStyle(color: Colors.black54, fontSize: 12)),
-                Text(money.format(invoice.total), style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    statusText,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            invoice.number,
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                          ),
+                          const SizedBox(height: 6),
+                          Text('Client: ${invoice.client.name}', style: const TextStyle(color: Colors.black87)),
+                          Text('Company: ${invoice.company.name}', style: const TextStyle(color: Colors.black87)),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Date: ${dateFormatter.format(invoice.date)}',
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Total', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                          Text(money.format(invoice.total), style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Paid', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                          Text(money.format(invoice.paid), style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Balance', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                          Text(money.format(invoice.due), style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _viewPdf(context),
+                      icon: const Icon(Icons.visibility, size: 16),
+                      label: const Text('View'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _downloadPdf,
+                      icon: const Icon(Icons.download, size: 16),
+                      label: const Text('Download'),
+                    ),
+                    TextButton.icon(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Edit'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _addPayment(context),
+                      icon: const Icon(Icons.payment, size: 16),
+                      label: const Text('Payment'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _delete(context),
+                      icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                      label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        invoice.number,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                      ),
+                      const SizedBox(height: 6),
+                      Text('Client: ${invoice.client.name}', style: const TextStyle(color: Colors.black87)),
+                      Text('Company: ${invoice.company.name}', style: const TextStyle(color: Colors.black87)),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Date: ${dateFormatter.format(invoice.date)}',
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                      Text(money.format(invoice.total), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusText,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Paid', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                      Text(money.format(invoice.paid), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Balance', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                      Text(money.format(invoice.due), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 150,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _viewPdf(context),
+                        icon: const Icon(Icons.visibility, size: 16),
+                        label: const Text('View'),
+                      ),
+                      const SizedBox(height: 6),
+                      OutlinedButton.icon(
+                        onPressed: _downloadPdf,
+                        icon: const Icon(Icons.download, size: 16),
+                        label: const Text('Download'),
+                      ),
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        onPressed: onEdit,
+                        icon: const Icon(Icons.edit, size: 16),
+                        label: const Text('Edit'),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _addPayment(context),
+                        icon: const Icon(Icons.payment, size: 16),
+                        label: const Text('Payment'),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _delete(context),
+                        icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                        label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Paid', style: TextStyle(color: Colors.black54, fontSize: 12)),
-                Text(money.format(invoice.paid), style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Balance', style: TextStyle(color: Colors.black54, fontSize: 12)),
-                Text(money.format(invoice.due), style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 150,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _downloadPdf,
-                  icon: const Icon(Icons.download, size: 16),
-                  label: const Text('Download'),
-                ),
-                const SizedBox(height: 6),
-                TextButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Edit'),
-                ),
-                TextButton.icon(
-                  onPressed: () => _addPayment(context),
-                  icon: const Icon(Icons.payment, size: 16),
-                  label: const Text('Payment'),
-                ),
-                TextButton.icon(
-                  onPressed: () => _delete(context),
-                  icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                  label: const Text('Delete', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
