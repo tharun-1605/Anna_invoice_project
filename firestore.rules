@@ -1,0 +1,110 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isString(field) {
+      return field is string;
+    }
+
+    function isNumber(field) {
+      return field is int || field is float;
+    }
+
+    function isTimestamp(field) {
+      return field is timestamp;
+    }
+
+    function hasOnly(data, fields) {
+      return data.keys().hasOnly(fields);
+    }
+
+    function isCompany(data) {
+      return hasOnly(data, ['name', 'address', 'phone', 'email', 'updatedAt'])
+        && isString(data.name)
+        && isString(data.address)
+        && isString(data.phone)
+        && isString(data.email)
+        && isTimestamp(data.updatedAt);
+    }
+
+    function isPackage(data) {
+      return hasOnly(data, ['name', 'description', 'price', 'updatedAt'])
+        && isString(data.name)
+        && isString(data.description)
+        && isNumber(data.price)
+        && isTimestamp(data.updatedAt);
+    }
+
+    function isClient(data) {
+      return hasOnly(data, ['name', 'phone', 'email', 'address', 'updatedAt'])
+        && isString(data.name)
+        && isString(data.phone)
+        && isString(data.email)
+        && isString(data.address)
+        && isTimestamp(data.updatedAt);
+    }
+
+    function isInvoice(data) {
+      return hasOnly(data, [
+          'number',
+          'company',
+          'client',
+          'date',
+          'dueDate',
+          'items',
+          'subtotal',
+          'total',
+          'paid',
+          'amountDue',
+          'notes',
+          'createdAt'
+        ])
+        && isString(data.number)
+        && isString(data.notes)
+        && data.company is map
+        && data.client is map
+        && hasOnly(data.company, ['id', 'name', 'address', 'phone', 'email'])
+        && hasOnly(data.client, ['id', 'name', 'phone', 'email', 'address'])
+        && isString(data.company.id)
+        && isString(data.company.name)
+        && isString(data.company.address)
+        && isString(data.company.phone)
+        && isString(data.company.email)
+        && isString(data.client.id)
+        && isString(data.client.name)
+        && isString(data.client.phone)
+        && isString(data.client.email)
+        && isString(data.client.address)
+        && isTimestamp(data.date)
+        && isTimestamp(data.dueDate)
+        && isTimestamp(data.createdAt)
+        && data.items is list
+        && data.items.size() > 0
+        && data.items.size() <= 100
+        && isNumber(data.subtotal)
+        && isNumber(data.total)
+        && isNumber(data.paid)
+        && isNumber(data.amountDue);
+    }
+
+    match /companies/{companyId} {
+      allow read: if true;
+      allow create, update: if isCompany(request.resource.data);
+    }
+
+    match /clients/{clientId} {
+      allow read: if true;
+      allow create, update: if isClient(request.resource.data);
+    }
+
+    match /packages/{packageId} {
+      allow read: if true;
+      allow create, update: if isPackage(request.resource.data);
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if true;
+      allow create: if isInvoice(request.resource.data);
+    }
+  }
+}

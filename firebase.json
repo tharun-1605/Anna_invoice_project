@@ -1,0 +1,28 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "invoiceapp-9187f",
+          "appId": "1:379066047440:android:dfe0b5cb9a28cd446737d5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "invoiceapp-9187f",
+          "configurations": {
+            "android": "1:379066047440:android:dfe0b5cb9a28cd446737d5",
+            "ios": "1:379066047440:ios:f7fcc99e92f0974f6737d5",
+            "macos": "1:379066047440:ios:f7fcc99e92f0974f6737d5",
+            "web": "1:379066047440:web:d758b1be84e26d4b6737d5",
+            "windows": "1:379066047440:web:18d36bb6d89910486737d5"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

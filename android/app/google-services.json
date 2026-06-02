@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "379066047440",
+    "project_id": "invoiceapp-9187f",
+    "storage_bucket": "invoiceapp-9187f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:379066047440:android:dfe0b5cb9a28cd446737d5",
+        "android_client_info": {
+          "package_name": "com.example.anna_invoice_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVSXx2OKvLrBudRORqDYvsir63TpO4DT8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
