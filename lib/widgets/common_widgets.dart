@@ -182,12 +182,16 @@ class InfoCard extends StatelessWidget {
     required this.lines,
     required this.icon,
     required this.onEdit,
+    this.onDelete,
+    this.onView,
   });
 
   final String title;
   final List<String> lines;
   final IconData icon;
   final VoidCallback onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onView;
 
   @override
   Widget build(BuildContext context) {
@@ -210,11 +214,23 @@ class InfoCard extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                 ),
+                if (onView != null)
+                  IconButton(
+                    tooltip: 'View',
+                    onPressed: onView,
+                    icon: const Icon(Icons.visibility_outlined),
+                  ),
                 IconButton(
                   tooltip: 'Edit',
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined),
                 ),
+                if (onDelete != null)
+                  IconButton(
+                    tooltip: 'Delete',
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  ),
               ],
             ),
             const SizedBox(height: 10),
@@ -301,4 +317,25 @@ class StatusLine extends StatelessWidget {
 String? requiredField(String? value) {
   if (value == null || value.trim().isEmpty) return 'Required';
   return null;
+}
+
+Future<bool?> confirmDelete(BuildContext context, String itemName) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Confirm Delete'),
+      content: Text('Are you sure you want to delete "$itemName"?\nThis action cannot be undone.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
 }

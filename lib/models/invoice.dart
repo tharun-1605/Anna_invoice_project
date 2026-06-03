@@ -15,6 +15,7 @@ class Invoice {
     required this.paid,
     required this.notes,
     required this.createdAt,
+    this.discountPercentage = 0.0,
   });
 
   final String id;
@@ -27,9 +28,11 @@ class Invoice {
   final double paid;
   final String notes;
   final DateTime createdAt;
+  final double discountPercentage;
 
   double get subtotal => items.fold(0, (total, item) => total + item.amount);
-  double get total => subtotal;
+  double get discountAmount => subtotal * (discountPercentage / 100);
+  double get total => subtotal - discountAmount;
   double get due => (total - paid).clamp(0, double.infinity);
 
   factory Invoice.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -59,6 +62,7 @@ class Invoice {
           .map((item) => InvoiceItem.fromJson(Map<String, dynamic>.from(item)))
           .toList(),
       paid: (data['paid'] ?? 0).toDouble(),
+      discountPercentage: (data['discountPercentage'] ?? 0).toDouble(),
       notes: data['notes'] ?? '',
       createdAt: _toDate(data['createdAt']),
     );
@@ -90,6 +94,7 @@ class Invoice {
     'dueDate': Timestamp.fromDate(dueDate),
     'items': items.map((item) => item.toJson()).toList(),
     'subtotal': subtotal,
+    'discountPercentage': discountPercentage,
     'total': total,
     'paid': paid,
     'amountDue': due,

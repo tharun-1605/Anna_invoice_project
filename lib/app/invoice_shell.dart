@@ -21,6 +21,7 @@ class _InvoiceShellState extends State<InvoiceShell> {
   late final InvoiceStore store;
   AppView view = AppView.dashboard;
   Invoice? invoiceToEdit;
+  Client? ledgerClient;
 
   @override
   void initState() {
@@ -41,6 +42,13 @@ class _InvoiceShellState extends State<InvoiceShell> {
     setState(() {
       invoiceToEdit = invoice;
       view = AppView.create;
+    });
+  }
+
+  void _viewLedger(Client client) {
+    setState(() {
+      ledgerClient = client;
+      view = AppView.clientLedger;
     });
   }
 
@@ -83,7 +91,9 @@ class _InvoiceShellState extends State<InvoiceShell> {
                               loading: loading,
                               onViewChanged: _changeView,
                               onEditInvoice: _editInvoice,
+                              onViewLedger: _viewLedger,
                               invoiceToEdit: invoiceToEdit,
+                              ledgerClient: ledgerClient,
                             );
 
                             if (!wide) {

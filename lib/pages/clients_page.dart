@@ -6,10 +6,16 @@ import '../services/invoice_store.dart';
 import '../widgets/common_widgets.dart';
 
 class ClientsPage extends StatelessWidget {
-  const ClientsPage({super.key, required this.store, required this.clients});
+  const ClientsPage({
+    super.key,
+    required this.store,
+    required this.clients,
+    required this.onViewLedger,
+  });
 
   final InvoiceStore store;
   final List<Client> clients;
+  final ValueChanged<Client> onViewLedger;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +42,14 @@ class ClientsPage extends StatelessWidget {
                     title: client.name,
                     lines: [client.phone, client.email, client.address],
                     icon: Icons.person_outline,
+                    onView: () => onViewLedger(client),
                     onEdit: () => showClientDialog(context, store, client),
+                    onDelete: () async {
+                      final confirm = await confirmDelete(context, client.name);
+                      if (confirm == true) {
+                        await store.deleteClient(client.id);
+                      }
+                    },
                   ),
                 )
                 .toList(),

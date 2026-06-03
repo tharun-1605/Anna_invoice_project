@@ -37,6 +37,12 @@ class CompaniesPage extends StatelessWidget {
                     lines: [company.address, company.phone, company.email],
                     icon: Icons.business_outlined,
                     onEdit: () => showCompanyDialog(context, store, company),
+                    onDelete: () async {
+                      final confirm = await confirmDelete(context, company.name);
+                      if (confirm == true) {
+                        await store.deleteCompany(company.id);
+                      }
+                    },
                   ),
                 )
                 .toList(),

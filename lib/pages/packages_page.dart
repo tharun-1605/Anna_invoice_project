@@ -38,6 +38,12 @@ class PackagesPage extends StatelessWidget {
                     lines: [pkg.description, 'Price: ${money.format(pkg.price)}'],
                     icon: Icons.inventory_2_outlined,
                     onEdit: () => showPackageDialog(context, store, pkg),
+                    onDelete: () async {
+                      final confirm = await confirmDelete(context, pkg.name);
+                      if (confirm == true) {
+                        await store.deletePackage(pkg.id);
+                      }
+                    },
                   ),
                 )
                 .toList(),

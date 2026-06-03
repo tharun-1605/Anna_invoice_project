@@ -1,1 +1,1 @@
-enum AppView { dashboard, companies, clients, invoices, packages, create }
+enum AppView { dashboard, companies, clients, clientLedger, salesReport, invoices, packages, create }

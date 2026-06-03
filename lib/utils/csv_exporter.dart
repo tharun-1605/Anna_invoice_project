@@ -56,4 +56,63 @@ class CsvExporter {
       mimeType: MimeType.csv,
     );
   }
+
+  static Future<void> exportSalesReport(List<Invoice> invoices) async {
+    final dateFormat = DateFormat('yyyy-MM-dd');
+
+    List<List<dynamic>> rows = [
+      [
+        'Invoice Number',
+        'Date',
+        'Client Name',
+        'Subtotal',
+        'Tax',
+        'Total',
+      ]
+    ];
+
+    double sumSubtotal = 0;
+    double sumTax = 0;
+    double sumTotal = 0;
+
+    for (final invoice in invoices) {
+      final reportSubtotal = invoice.total / 1.18;
+      final tax = invoice.total - reportSubtotal;
+
+      sumSubtotal += reportSubtotal;
+      sumTax += tax;
+      sumTotal += invoice.total;
+
+      rows.add([
+        invoice.number,
+        dateFormat.format(invoice.date),
+        invoice.client.name,
+        reportSubtotal.toStringAsFixed(2),
+        tax.toStringAsFixed(2),
+        invoice.total.toStringAsFixed(2),
+      ]);
+    }
+
+    // Add total row
+    rows.add([]);
+    rows.add([
+      'TOTAL',
+      '',
+      '',
+      sumSubtotal.toStringAsFixed(2),
+      sumTax.toStringAsFixed(2),
+      sumTotal.toStringAsFixed(2),
+    ]);
+
+    final csvString = csv.encode(rows);
+    final bytes = Uint8List.fromList(csvString.codeUnits);
+
+    final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    await FileSaver.instance.saveFile(
+      name: 'sales_report_$timestamp',
+      bytes: bytes,
+      fileExtension: 'csv',
+      mimeType: MimeType.csv,
+    );
+  }
 }

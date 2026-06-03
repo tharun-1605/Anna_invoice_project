@@ -38,6 +38,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   final formKey = GlobalKey<FormState>();
   final number = TextEditingController(text: '188');
   final paid = TextEditingController(text: '0');
+  final discountPercentage = TextEditingController(text: '0');
   final notes = TextEditingController();
   DateTime invoiceDate = DateTime.now();
   DateTime dueDate = DateTime.now().add(const Duration(days: 7));
@@ -54,6 +55,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
 
     number.text = invoice.number;
     paid.text = invoice.paid.toString();
+    discountPercentage.text = invoice.discountPercentage.toString();
     notes.text = invoice.notes;
     invoiceDate = invoice.date;
     dueDate = invoice.dueDate;
@@ -75,6 +77,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   void dispose() {
     number.dispose();
     paid.dispose();
+    discountPercentage.dispose();
     notes.dispose();
     for (final item in items) {
       item.dispose();
@@ -189,6 +192,15 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                   controller: paid,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: 'Paid amount'),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: discountPercentage,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Discount (%)'),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
@@ -349,6 +361,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
       dueDate: dueDate,
       items: invoiceItems,
       paid: double.tryParse(paid.text.trim()) ?? 0,
+      discountPercentage: double.tryParse(discountPercentage.text.trim()) ?? 0.0,
       notes: notes.text.trim(),
       createdAt: widget.invoiceToEdit?.createdAt ?? DateTime.now(),
     );
@@ -673,6 +686,8 @@ class _InvoicePreview extends StatelessWidget {
               child: Column(
                 children: [
                   _TotalLine('Subtotal', money.format(invoice.subtotal)),
+                  if (invoice.discountPercentage > 0)
+                    _TotalLine('Discount (${invoice.discountPercentage.toStringAsFixed(0)}%)', '-${money.format(invoice.discountAmount)}'),
                   _TotalLine('Total', money.format(invoice.total), strong: true),
                   _TotalLine('Paid', money.format(invoice.paid)),
                   const Divider(),
@@ -783,7 +798,25 @@ class _PreviewTable extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 5, child: Text(item.description)),
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.description.split('\n').first,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      if (item.description.contains('\n'))
+                        ...item.description.split('\n').skip(1).map(
+                              (line) => Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(line, style: const TextStyle(color: Colors.black87)),
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
                 Expanded(child: Text(item.quantity.toStringAsFixed(0))),
                 Expanded(flex: 2, child: Text(money.format(item.price))),
                 Expanded(flex: 2, child: Text(money.format(item.amount))),

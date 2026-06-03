@@ -63,4 +63,13 @@ class InvoiceStore {
         : db.collection('packages').doc(package.id);
     return ref.set(package.toJson(), SetOptions(merge: true));
   }
+
+  Future<void> deleteCompany(String id) =>
+      db.collection('companies').doc(id).delete();
+
+  Future<void> deleteClient(String id) =>
+      db.collection('clients').doc(id).delete();
+
+  Future<void> deletePackage(String id) =>
+      db.collection('packages').doc(id).delete();
 }

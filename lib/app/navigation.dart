@@ -57,6 +57,18 @@ class SideNav extends StatelessWidget {
             active: view == AppView.packages,
             onTap: () => onViewChanged(AppView.packages),
           ),
+          _NavButton(
+            icon: Icons.account_balance_wallet_outlined,
+            label: 'Ledger',
+            active: view == AppView.clientLedger,
+            onTap: () => onViewChanged(AppView.clientLedger),
+          ),
+          _NavButton(
+            icon: Icons.bar_chart_outlined,
+            label: 'Sales',
+            active: view == AppView.salesReport,
+            onTap: () => onViewChanged(AppView.salesReport),
+          ),
           const Spacer(),
           FilledButton.icon(
             onPressed: () => onViewChanged(AppView.create),
@@ -110,6 +122,8 @@ class MobileBar extends StatelessWidget {
                 _ChipNav('Clients', AppView.clients, view, onViewChanged),
                 _ChipNav('Invoices', AppView.invoices, view, onViewChanged),
                 _ChipNav('Packages', AppView.packages, view, onViewChanged),
+                _ChipNav('Ledger', AppView.clientLedger, view, onViewChanged),
+                _ChipNav('Sales', AppView.salesReport, view, onViewChanged),
               ],
             ),
           ),

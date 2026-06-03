@@ -4,12 +4,14 @@ import '../models/client.dart';
 import '../models/company.dart';
 import '../models/invoice.dart';
 import '../models/studio_package.dart';
+import '../pages/client_ledger_page.dart';
 import '../pages/clients_page.dart';
 import '../pages/companies_page.dart';
 import '../pages/dashboard_page.dart';
 import '../pages/invoice_composer.dart';
 import '../pages/invoices_page.dart';
 import '../pages/packages_page.dart';
+import '../pages/sales_page.dart';
 import '../services/invoice_store.dart';
 import 'app_view.dart';
 
@@ -25,7 +27,9 @@ class AppContent extends StatelessWidget {
     required this.loading,
     required this.onViewChanged,
     required this.onEditInvoice,
+    required this.onViewLedger,
     this.invoiceToEdit,
+    this.ledgerClient,
   });
 
   final AppView view;
@@ -37,7 +41,9 @@ class AppContent extends StatelessWidget {
   final bool loading;
   final ValueChanged<AppView> onViewChanged;
   final ValueChanged<Invoice> onEditInvoice;
+  final ValueChanged<Client> onViewLedger;
   final Invoice? invoiceToEdit;
+  final Client? ledgerClient;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +57,17 @@ class AppContent extends StatelessWidget {
           onCreate: () => onViewChanged(AppView.create),
         ),
       AppView.companies => CompaniesPage(store: store, companies: companies),
-      AppView.clients => ClientsPage(store: store, clients: clients),
+      AppView.clients => ClientsPage(
+          store: store,
+          clients: clients,
+          onViewLedger: onViewLedger,
+        ),
+      AppView.clientLedger => ClientLedgerPage(
+              clients: clients,
+              invoices: invoices,
+              initialClient: ledgerClient,
+            ),
+      AppView.salesReport => SalesPage(invoices: invoices),
       AppView.invoices => InvoicesPage(
           invoices: invoices,
           store: store,
