@@ -107,65 +107,67 @@ class RemindersPage extends StatelessWidget {
                     BoxShadow(color: Colors.red.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.warning_amber_rounded, color: Colors.red.shade600),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            inv.client.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Invoice ${inv.number}',
-                            style: const TextStyle(color: Colors.black54),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Due: ${dateFormatter.format(inv.dueDate)} ($daysOverdue days overdue)',
-                            style: TextStyle(color: Colors.red.shade600, fontSize: 13, fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.warning_amber_rounded, color: Colors.red.shade600),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                inv.client.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Invoice ${inv.number}',
+                                style: const TextStyle(color: Colors.black54),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Due: ${dateFormatter.format(inv.dueDate)} ($daysOverdue days overdue)',
+                                style: TextStyle(color: Colors.red.shade600, fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
                         Text(
                           money.format(inv.due),
                           style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.red),
                         ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: () => _clearReminder(context, inv),
-                              icon: const Icon(Icons.done_all, size: 16),
-                              label: const Text('Clear'),
-                            ),
-                            FilledButton.icon(
-                              onPressed: () => _sendReminder(context, inv),
-                              icon: const Icon(Icons.send, size: 16),
-                              style: FilledButton.styleFrom(backgroundColor: Colors.green),
-                              label: const Text('Remind'),
-                            ),
-                          ],
-                        ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _clearReminder(context, inv),
+                            icon: const Icon(Icons.done_all, size: 16),
+                            label: const Text('Clear'),
+                          ),
+                          FilledButton.icon(
+                            onPressed: () => _sendReminder(context, inv),
+                            icon: const Icon(Icons.send, size: 16),
+                            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+                            label: const Text('Remind'),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

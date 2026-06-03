@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:printing/printing.dart';
 
 import '../models/client.dart';
 import '../models/company.dart';
@@ -12,6 +11,9 @@ import '../services/invoice_store.dart';
 import '../utils/formatters.dart';
 import '../utils/pdf_generator.dart';
 import '../widgets/common_widgets.dart';
+import '../utils/download_helper.dart';
+import 'dart:typed_data';
+import 'package:file_saver/file_saver.dart';
 
 class InvoiceComposer extends StatefulWidget {
   const InvoiceComposer({
@@ -419,10 +421,33 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   }
 
   Future<void> _print(Invoice invoice) async {
-    final bytes = await buildInvoicePdf(invoice);
-    await Printing.layoutPdf(
-      name: 'invoice-${invoice.number}.pdf',
-      onLayout: (_) async => bytes,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    Uint8List? bytes;
+    try {
+      bytes = await buildInvoicePdf(invoice);
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        _toast('Failed to generate PDF: $e');
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+
+    await DownloadHelper.saveFileWithPermission(
+      context: context,
+      name: 'invoice-${invoice.number}',
+      bytes: bytes,
+      fileExtension: 'pdf',
+      mimeType: MimeType.pdf,
     );
   }
 

@@ -9,6 +9,7 @@ import '../services/invoice_store.dart';
 import 'app_content.dart';
 import 'app_view.dart';
 import 'navigation.dart';
+import '../utils/download_helper.dart';
 
 class InvoiceShell extends StatefulWidget {
   const InvoiceShell({super.key});
@@ -27,6 +28,7 @@ class _InvoiceShellState extends State<InvoiceShell> {
   void initState() {
     super.initState();
     store = InvoiceStore(FirebaseFirestore.instance);
+    DownloadHelper.requestStoragePermissionOnStartup();
   }
 
   void _changeView(AppView next) {

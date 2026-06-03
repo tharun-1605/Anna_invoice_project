@@ -77,7 +77,7 @@ class _ClientLedgerPageState extends State<ClientLedgerPage> {
           onMonthChanged: (m) => setState(() => _selectedMonth = m),
           selectedYear: _selectedYear,
           onYearChanged: (y) => setState(() => _selectedYear = y),
-          onExport: () => CsvExporter.exportInvoices(history),
+          onExport: () => CsvExporter.exportInvoices(context, history),
         ),
         LayoutBuilder(
           builder: (context, constraints) {

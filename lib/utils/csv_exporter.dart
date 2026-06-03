@@ -2,10 +2,12 @@ import 'dart:typed_data';
 import 'package:csv/csv.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import '../models/invoice.dart';
+import 'download_helper.dart';
 
 class CsvExporter {
-  static Future<void> exportInvoices(List<Invoice> invoices) async {
+  static Future<void> exportInvoices(BuildContext context, List<Invoice> invoices) async {
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     // Headers
@@ -55,7 +57,8 @@ class CsvExporter {
     final bytes = Uint8List.fromList(csvString.codeUnits);
 
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    await FileSaver.instance.saveFile(
+    await DownloadHelper.saveFileWithPermission(
+      context: context,
       name: 'invoices_$timestamp',
       bytes: bytes,
       fileExtension: 'csv',
@@ -63,7 +66,7 @@ class CsvExporter {
     );
   }
 
-  static Future<void> exportSalesReport(List<Invoice> invoices) async {
+  static Future<void> exportSalesReport(BuildContext context, List<Invoice> invoices) async {
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     List<List<dynamic>> rows = [
@@ -114,7 +117,8 @@ class CsvExporter {
     final bytes = Uint8List.fromList(csvString.codeUnits);
 
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    await FileSaver.instance.saveFile(
+    await DownloadHelper.saveFileWithPermission(
+      context: context,
       name: 'sales_report_$timestamp',
       bytes: bytes,
       fileExtension: 'csv',

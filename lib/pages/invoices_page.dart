@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,9 +11,11 @@ import '../models/invoice.dart';
 import '../models/payment.dart';
 import '../services/invoice_store.dart';
 import '../utils/csv_exporter.dart';
+import '../utils/download_helper.dart';
 import '../utils/formatters.dart';
 import '../utils/pdf_generator.dart';
 import '../widgets/common_widgets.dart';
+import 'package:file_saver/file_saver.dart';
 
 class InvoicesPage extends StatefulWidget {
   const InvoicesPage({
@@ -62,7 +65,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
     super.dispose();
   }
 
-  Future<void> _exportCsv() => CsvExporter.exportInvoices(widget.invoices);
+  Future<void> _exportCsv() => CsvExporter.exportInvoices(context, widget.invoices);
 
   @override
   Widget build(BuildContext context) {
@@ -422,11 +425,34 @@ class InvoiceActionRow extends StatelessWidget {
     }
   }
 
-  Future<void> _downloadPdf() async {
-    final bytes = await buildInvoicePdf(invoice);
-    await Printing.layoutPdf(
-      name: 'invoice-${invoice.number}.pdf',
-      onLayout: (_) async => bytes,
+  Future<void> _downloadPdf(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    Uint8List? bytes;
+    try {
+      bytes = await buildInvoicePdf(invoice);
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
+      }
+      return;
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+
+    await DownloadHelper.saveFileWithPermission(
+      context: context,
+      name: 'invoice-${invoice.number}',
+      bytes: bytes,
+      fileExtension: 'pdf',
+      mimeType: MimeType.pdf,
     );
   }
 
@@ -439,6 +465,9 @@ class InvoiceActionRow extends StatelessWidget {
             build: (format) => buildInvoicePdf(invoice),
             allowPrinting: true,
             allowSharing: true,
+            canChangePageFormat: false,
+            canChangeOrientation: false,
+            canDebug: false,
           ),
         ),
       ),
@@ -446,8 +475,28 @@ class InvoiceActionRow extends StatelessWidget {
   }
 
   Future<void> _sharePdf(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    Uint8List? bytes;
     try {
-      final bytes = await buildInvoicePdf(invoice);
+      bytes = await buildInvoicePdf(invoice);
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
+      }
+      return;
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+
+    try {
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/Invoice-${invoice.number}.pdf');
       await file.writeAsBytes(bytes);
@@ -625,7 +674,7 @@ class InvoiceActionRow extends StatelessWidget {
                       label: const Text('View'),
                     ),
                     OutlinedButton.icon(
-                      onPressed: _downloadPdf,
+                      onPressed: () => _downloadPdf(context),
                       icon: const Icon(Icons.download, size: 16),
                       label: const Text('Download'),
                     ),
@@ -755,7 +804,7 @@ class InvoiceActionRow extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  width: 150,
+                  width: 180,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -766,7 +815,7 @@ class InvoiceActionRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       OutlinedButton.icon(
-                        onPressed: _downloadPdf,
+                        onPressed: () => _downloadPdf(context),
                         icon: const Icon(Icons.download, size: 16),
                         label: const Text('Download'),
                       ),

@@ -207,7 +207,7 @@ class _SalesPageState extends State<SalesPage> {
   }
 
   void _exportSalesCsv(BuildContext context, List<Invoice> history) {
-    CsvExporter.exportSalesReport(history);
+    CsvExporter.exportSalesReport(context, history);
   }
 }
 
