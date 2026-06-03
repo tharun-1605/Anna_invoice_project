@@ -11,6 +11,7 @@ import '../pages/dashboard_page.dart';
 import '../pages/invoice_composer.dart';
 import '../pages/invoices_page.dart';
 import '../pages/packages_page.dart';
+import '../pages/reminders_page.dart';
 import '../pages/sales_page.dart';
 import '../services/invoice_store.dart';
 import 'app_view.dart';
@@ -72,6 +73,10 @@ class AppContent extends StatelessWidget {
           invoices: invoices,
           store: store,
           onEdit: onEditInvoice,
+        ),
+      AppView.reminders => RemindersPage(
+          invoices: invoices,
+          store: store,
         ),
       AppView.packages => PackagesPage(store: store, packages: packages),
       AppView.create => InvoiceComposer(

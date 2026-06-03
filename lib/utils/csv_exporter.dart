@@ -20,6 +20,7 @@ class CsvExporter {
         'Paid',
         'Balance',
         'Status',
+        'Payment History',
         'Notes',
       ]
     ];
@@ -31,6 +32,10 @@ class CsvExporter {
               ? 'Partially Paid'
               : 'Unpaid';
 
+      final paymentHistory = invoice.payments
+          .map((p) => '${dateFormat.format(p.date)}: ${p.amount} (${p.method})')
+          .join(' | ');
+
       rows.add([
         invoice.number,
         invoice.client.name,
@@ -41,6 +46,7 @@ class CsvExporter {
         invoice.paid,
         invoice.due,
         status,
+        paymentHistory,
         invoice.notes.replaceAll('\n', ' '), // Keep notes on single line
       ]);
     }

@@ -96,10 +96,18 @@ class _InvoiceShellState extends State<InvoiceShell> {
                               ledgerClient: ledgerClient,
                             );
 
+                            final now = DateTime.now();
+                            final pendingReminders = invoices.where((inv) {
+                              return inv.type == 'Tax Invoice' && 
+                                     inv.due > 0 && 
+                                     now.isAfter(inv.dueDate) && 
+                                     !inv.isReminderDismissed;
+                            }).length;
+
                             if (!wide) {
                               return Column(
                                 children: [
-                                  MobileBar(view: view, onViewChanged: _changeView),
+                                  MobileBar(view: view, onViewChanged: _changeView, pendingReminders: pendingReminders),
                                   Expanded(child: content),
                                 ],
                               );
@@ -107,7 +115,7 @@ class _InvoiceShellState extends State<InvoiceShell> {
 
                             return Row(
                               children: [
-                                SideNav(view: view, onViewChanged: _changeView),
+                                SideNav(view: view, onViewChanged: _changeView, pendingReminders: pendingReminders),
                                 Expanded(child: content),
                               ],
                             );

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'company.dart';
 import 'client.dart';
 import 'invoice_item.dart';
+import 'payment.dart';
 
 class Invoice {
   Invoice({
@@ -15,7 +16,10 @@ class Invoice {
     required this.paid,
     required this.notes,
     required this.createdAt,
+    required this.payments,
     this.discountPercentage = 0.0,
+    this.type = 'Tax Invoice',
+    this.isReminderDismissed = false,
   });
 
   final String id;
@@ -29,6 +33,9 @@ class Invoice {
   final String notes;
   final DateTime createdAt;
   final double discountPercentage;
+  final String type;
+  final List<Payment> payments;
+  final bool isReminderDismissed;
 
   double get subtotal => items.fold(0, (total, item) => total + item.amount);
   double get discountAmount => subtotal * (discountPercentage / 100);
@@ -39,6 +46,23 @@ class Invoice {
     final data = doc.data() ?? {};
     final companyData = Map<String, dynamic>.from(data['company'] ?? {});
     final clientData = Map<String, dynamic>.from(data['client'] ?? {});
+    
+    final paidAmount = (data['paid'] ?? 0).toDouble();
+    List<Payment> parsedPayments = (data['payments'] as List<dynamic>? ?? [])
+        .map((p) => Payment.fromJson(Map<String, dynamic>.from(p)))
+        .toList();
+        
+    // Legacy migration
+    if (parsedPayments.isEmpty && paidAmount > 0) {
+      parsedPayments = [
+        Payment(
+          amount: paidAmount,
+          method: 'Legacy Payment',
+          date: _toDate(data['createdAt']),
+        )
+      ];
+    }
+    
     return Invoice(
       id: doc.id,
       number: data['number'] ?? '',
@@ -61,10 +85,13 @@ class Invoice {
       items: (data['items'] as List<dynamic>? ?? [])
           .map((item) => InvoiceItem.fromJson(Map<String, dynamic>.from(item)))
           .toList(),
-      paid: (data['paid'] ?? 0).toDouble(),
+      paid: paidAmount,
       discountPercentage: (data['discountPercentage'] ?? 0).toDouble(),
       notes: data['notes'] ?? '',
       createdAt: _toDate(data['createdAt']),
+      type: data['type'] ?? 'Tax Invoice',
+      payments: parsedPayments,
+      isReminderDismissed: data['isReminderDismissed'] ?? false,
     );
   }
 
@@ -100,5 +127,8 @@ class Invoice {
     'amountDue': due,
     'notes': notes,
     'createdAt': FieldValue.serverTimestamp(),
+    'type': type,
+    'payments': payments.map((p) => p.toJson()).toList(),
+    'isReminderDismissed': isReminderDismissed,
   };
 }

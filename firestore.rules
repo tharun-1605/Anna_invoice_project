@@ -58,10 +58,15 @@ service cloud.firestore {
           'paid',
           'amountDue',
           'notes',
-          'createdAt'
+          'createdAt',
+          'type',
+          'discountPercentage',
+          'payments',
+          'isReminderDismissed'
         ])
         && isString(data.number)
         && isString(data.notes)
+        && (data.isReminderDismissed is bool || !data.keys().hasAny(['isReminderDismissed']))
         && data.company is map
         && data.client is map
         && hasOnly(data.company, ['id', 'name', 'address', 'phone', 'email'])
@@ -85,21 +90,24 @@ service cloud.firestore {
         && isNumber(data.subtotal)
         && isNumber(data.total)
         && isNumber(data.paid)
-        && isNumber(data.amountDue);
+        && isNumber(data.amountDue)
+        && isNumber(data.discountPercentage)
+        && isString(data.type)
+        && data.payments is list;
     }
 
     match /companies/{companyId} {
-      allow read: if true;
+      allow read, delete: if true;
       allow create, update: if isCompany(request.resource.data);
     }
 
     match /clients/{clientId} {
-      allow read: if true;
+      allow read, delete: if true;
       allow create, update: if isClient(request.resource.data);
     }
 
     match /packages/{packageId} {
-      allow read: if true;
+      allow read, delete: if true;
       allow create, update: if isPackage(request.resource.data);
     }
 

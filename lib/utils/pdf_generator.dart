@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../models/client.dart';
 import '../models/invoice.dart';
@@ -14,11 +15,18 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
   final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
   final doc = pw.Document();
 
+  final font = await PdfGoogleFonts.robotoRegular();
+  final boldFont = await PdfGoogleFonts.robotoBold();
+
   doc.addPage(
     pw.MultiPage(
-      pageTheme: const pw.PageTheme(
+      pageTheme: pw.PageTheme(
         pageFormat: PdfPageFormat.a4,
-        margin: pw.EdgeInsets.all(36),
+        margin: const pw.EdgeInsets.all(36),
+        theme: pw.ThemeData.withFont(
+          base: font,
+          bold: boldFont,
+        ),
       ),
       build: (context) => [
         pw.Row(
@@ -27,7 +35,7 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
             pw.Image(logo, width: 170),
             pw.Spacer(),
             pw.Text(
-              'Invoice',
+              invoice.type.toUpperCase(),
               style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold),
             ),
           ],
@@ -55,7 +63,7 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  _pdfFact('Invoice #', invoice.number),
+                  _pdfFact('${invoice.type} #', invoice.number),
                   _pdfFact('Date', dateFormatter.format(invoice.date)),
                   _pdfFact('Due date', dateFormatter.format(invoice.dueDate)),
                 ],
@@ -132,13 +140,6 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
                 if (invoice.discountPercentage > 0)
                   _pdfTotal('Discount (${invoice.discountPercentage.toStringAsFixed(0)}%)', '-${money.format(invoice.discountAmount)}'),
                 _pdfTotal('Total', money.format(invoice.total), strong: true),
-                _pdfTotal('Paid', money.format(invoice.paid)),
-                pw.Divider(),
-                _pdfTotal(
-                  'Amount Due',
-                  money.format(invoice.due),
-                  strong: true,
-                ),
               ],
             ),
           ),

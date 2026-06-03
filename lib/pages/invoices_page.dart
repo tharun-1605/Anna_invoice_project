@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/invoice.dart';
+import '../models/payment.dart';
 import '../services/invoice_store.dart';
 import '../utils/csv_exporter.dart';
 import '../utils/formatters.dart';
@@ -388,45 +394,11 @@ class InvoiceActionRow extends StatelessWidget {
   final InvoiceStore store;
   final VoidCallback onEdit;
 
-  Future<void> _addPayment(BuildContext context) async {
-    final ctrl = TextEditingController();
+  Future<void> _managePayments(BuildContext context) async {
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Payment'),
-        content: TextField(
-          controller: ctrl,
-          decoration: const InputDecoration(labelText: 'Amount'),
-          keyboardType: TextInputType.number,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () async {
-              final amount = double.tryParse(ctrl.text) ?? 0;
-              if (amount > 0) {
-                final updated = Invoice(
-                  id: invoice.id,
-                  number: invoice.number,
-                  company: invoice.company,
-                  client: invoice.client,
-                  date: invoice.date,
-                  dueDate: invoice.dueDate,
-                  items: invoice.items,
-                  paid: invoice.paid + amount,
-                  notes: invoice.notes,
-                  createdAt: invoice.createdAt,
-                );
-                await store.saveInvoice(updated);
-                if (context.mounted) Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      builder: (context) => ManagePaymentsDialog(invoice: invoice, store: store),
     );
-    ctrl.dispose();
   }
 
   Future<void> _delete(BuildContext context) async {
@@ -473,6 +445,63 @@ class InvoiceActionRow extends StatelessWidget {
     );
   }
 
+  Future<void> _sharePdf(BuildContext context) async {
+    try {
+      final bytes = await buildInvoicePdf(invoice);
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/Invoice-${invoice.number}.pdf');
+      await file.writeAsBytes(bytes);
+      
+      if (context.mounted) {
+        final box = context.findRenderObject() as RenderBox?;
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'Here is the invoice for ${invoice.client.name}',
+          subject: 'Invoice ${invoice.number}',
+          sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share PDF: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _convertToTaxInvoice(BuildContext context) async {
+    final updated = Invoice(
+      id: invoice.id,
+      number: invoice.number,
+      company: invoice.company,
+      client: invoice.client,
+      date: invoice.date,
+      dueDate: invoice.dueDate,
+      items: invoice.items,
+      paid: invoice.paid,
+      discountPercentage: invoice.discountPercentage,
+      notes: invoice.notes,
+      createdAt: invoice.createdAt,
+      type: 'Tax Invoice',
+      payments: invoice.payments,
+    );
+    await store.saveInvoice(updated);
+  }
+
+  Future<void> _sendReminder(BuildContext context) async {
+    final text = 'Hello ${invoice.client.name}, this is a reminder that Invoice ${invoice.number} for ${money.format(invoice.total)} is due on ${dateFormatter.format(invoice.dueDate)}. The current balance is ${money.format(invoice.due)}. Please arrange payment. Thank you!';
+    final phone = invoice.client.phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final url = Uri.parse('whatsapp://send?phone=$phone&text=${Uri.encodeComponent(text)}');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open WhatsApp')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final statusColor = invoice.due == 0
@@ -509,9 +538,28 @@ class InvoiceActionRow extends StatelessWidget {
                           Text('Client: ${invoice.client.name}', style: const TextStyle(color: Colors.black87)),
                           Text('Company: ${invoice.company.name}', style: const TextStyle(color: Colors.black87)),
                           const SizedBox(height: 6),
-                          Text(
-                            'Date: ${dateFormatter.format(invoice.date)}',
-                            style: const TextStyle(color: Colors.black54),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                'Date: ${dateFormatter.format(invoice.date)}',
+                                style: const TextStyle(color: Colors.black54),
+                              ),
+                              if (invoice.type != 'Tax Invoice') ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    invoice.type,
+                                    style: const TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
@@ -581,16 +629,34 @@ class InvoiceActionRow extends StatelessWidget {
                       icon: const Icon(Icons.download, size: 16),
                       label: const Text('Download'),
                     ),
+                    OutlinedButton.icon(
+                      onPressed: () => _sharePdf(context),
+                      icon: const Icon(Icons.share, size: 16),
+                      label: const Text('Share'),
+                    ),
                     TextButton.icon(
                       onPressed: onEdit,
                       icon: const Icon(Icons.edit, size: 16),
                       label: const Text('Edit'),
                     ),
-                    TextButton.icon(
-                      onPressed: () => _addPayment(context),
-                      icon: const Icon(Icons.payment, size: 16),
-                      label: const Text('Payment'),
-                    ),
+                    if (invoice.type == 'Tax Invoice' && invoice.due > 0)
+                      TextButton.icon(
+                        onPressed: () => _managePayments(context),
+                        icon: const Icon(Icons.payment, size: 16),
+                        label: const Text('Payment'),
+                      ),
+                    if (invoice.type != 'Tax Invoice')
+                      TextButton.icon(
+                        onPressed: () => _convertToTaxInvoice(context),
+                        icon: const Icon(Icons.transform, size: 16),
+                        label: const Text('Convert to Tax'),
+                      ),
+                    if (invoice.type == 'Tax Invoice' && invoice.due > 0 && DateTime.now().isAfter(invoice.dueDate))
+                      TextButton.icon(
+                        onPressed: () => _sendReminder(context),
+                        icon: const Icon(Icons.notifications_active, size: 16, color: Colors.green),
+                        label: const Text('Reminder', style: TextStyle(color: Colors.green)),
+                      ),
                     TextButton.icon(
                       onPressed: () => _delete(context),
                       icon: const Icon(Icons.delete, size: 16, color: Colors.red),
@@ -616,9 +682,28 @@ class InvoiceActionRow extends StatelessWidget {
                       Text('Client: ${invoice.client.name}', style: const TextStyle(color: Colors.black87)),
                       Text('Company: ${invoice.company.name}', style: const TextStyle(color: Colors.black87)),
                       const SizedBox(height: 6),
-                      Text(
-                        'Date: ${dateFormatter.format(invoice.date)}',
-                        style: const TextStyle(color: Colors.black54),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            'Date: ${dateFormatter.format(invoice.date)}',
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                          if (invoice.type != 'Tax Invoice') ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                invoice.type,
+                                style: const TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -686,16 +771,35 @@ class InvoiceActionRow extends StatelessWidget {
                         label: const Text('Download'),
                       ),
                       const SizedBox(height: 6),
+                      OutlinedButton.icon(
+                        onPressed: () => _sharePdf(context),
+                        icon: const Icon(Icons.share, size: 16),
+                        label: const Text('Share'),
+                      ),
+                      const SizedBox(height: 6),
                       TextButton.icon(
                         onPressed: onEdit,
                         icon: const Icon(Icons.edit, size: 16),
                         label: const Text('Edit'),
                       ),
-                      TextButton.icon(
-                        onPressed: () => _addPayment(context),
-                        icon: const Icon(Icons.payment, size: 16),
-                        label: const Text('Payment'),
-                      ),
+                      if (invoice.type == 'Tax Invoice' && invoice.due > 0)
+                        TextButton.icon(
+                          onPressed: () => _managePayments(context),
+                          icon: const Icon(Icons.payment, size: 16),
+                          label: const Text('Payment'),
+                        ),
+                      if (invoice.type != 'Tax Invoice')
+                        TextButton.icon(
+                          onPressed: () => _convertToTaxInvoice(context),
+                          icon: const Icon(Icons.transform, size: 16),
+                          label: const Text('Convert to Tax'),
+                        ),
+                      if (invoice.type == 'Tax Invoice' && invoice.due > 0 && DateTime.now().isAfter(invoice.dueDate))
+                        TextButton.icon(
+                          onPressed: () => _sendReminder(context),
+                          icon: const Icon(Icons.notifications_active, size: 16, color: Colors.green),
+                          label: const Text('Reminder', style: TextStyle(color: Colors.green)),
+                        ),
                       TextButton.icon(
                         onPressed: () => _delete(context),
                         icon: const Icon(Icons.delete, size: 16, color: Colors.red),
@@ -714,4 +818,156 @@ String _invoiceStatus(Invoice invoice) {
   if (invoice.due == 0) return 'Paid';
   if (invoice.paid > 0) return 'Partially Paid';
   return 'Unpaid';
+}
+
+class ManagePaymentsDialog extends StatefulWidget {
+  const ManagePaymentsDialog({super.key, required this.invoice, required this.store});
+  final Invoice invoice;
+  final InvoiceStore store;
+
+  @override
+  State<ManagePaymentsDialog> createState() => _ManagePaymentsDialogState();
+}
+
+class _ManagePaymentsDialogState extends State<ManagePaymentsDialog> {
+  late List<Payment> payments;
+  bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    payments = List.from(widget.invoice.payments);
+  }
+
+  void _addPayment() {
+    final currentDue = widget.invoice.total - payments.fold(0.0, (s, p) => s + p.amount);
+    if (currentDue <= 0) return;
+    setState(() {
+      payments.add(Payment(amount: currentDue, method: 'Cash', date: DateTime.now()));
+    });
+  }
+
+  Future<void> _save() async {
+    setState(() => isSaving = true);
+    final totalPaid = payments.fold(0.0, (s, p) => s + p.amount);
+    final updated = Invoice(
+      id: widget.invoice.id,
+      number: widget.invoice.number,
+      company: widget.invoice.company,
+      client: widget.invoice.client,
+      date: widget.invoice.date,
+      dueDate: widget.invoice.dueDate,
+      items: widget.invoice.items,
+      paid: totalPaid,
+      discountPercentage: widget.invoice.discountPercentage,
+      notes: widget.invoice.notes,
+      createdAt: widget.invoice.createdAt,
+      type: widget.invoice.type,
+      payments: payments,
+    );
+    try {
+      await widget.store.saveInvoice(updated);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final methods = ['Cash', 'Card', 'Bank Transfer', 'GPay', 'UPI', 'Cheque'];
+    final currentDue = widget.invoice.total - payments.fold(0.0, (s, p) => s + p.amount);
+    
+    return AlertDialog(
+      title: const Text('Manage Payments'),
+      content: SizedBox(
+        width: 600,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (payments.isEmpty) const Text('No payments yet.'),
+              for (int i = 0; i < payments.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          initialValue: payments[i].amount.toString(),
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Amount'),
+                          onChanged: (val) {
+                            payments[i] = Payment(
+                              amount: double.tryParse(val) ?? 0,
+                              method: payments[i].method,
+                              date: payments[i].date,
+                            );
+                            setState(() {}); // update due amount
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          initialValue: payments[i].method,
+                          decoration: const InputDecoration(labelText: 'Method'),
+                          items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                payments[i] = Payment(
+                                  amount: payments[i].amount,
+                                  method: val,
+                                  date: payments[i].date,
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Delete Installment',
+                        onPressed: () {
+                          setState(() {
+                            payments.removeAt(i);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 16),
+              if (currentDue > 0)
+                OutlinedButton.icon(
+                  onPressed: _addPayment,
+                  icon: const Icon(Icons.add),
+                  label: Text('Add Installment (Due: ${currentDue.toStringAsFixed(2)})'),
+                ),
+              if (currentDue <= 0 && payments.isNotEmpty)
+                const Text('Invoice is fully paid.', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : _save,
+          child: isSaving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Save Payments'),
+        ),
+      ],
+    );
+  }
 }

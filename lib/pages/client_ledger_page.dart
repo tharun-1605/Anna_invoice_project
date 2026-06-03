@@ -44,6 +44,7 @@ class _ClientLedgerPageState extends State<ClientLedgerPage> {
 
   List<Invoice> get filteredInvoices {
     return widget.invoices.where((inv) {
+      if (inv.type != 'Tax Invoice') return false;
       if (_selectedClient != null && inv.client.id != _selectedClient!.id) {
         return false;
       }

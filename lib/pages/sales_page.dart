@@ -29,6 +29,7 @@ class _SalesPageState extends State<SalesPage> {
 
   List<Invoice> get filteredInvoices {
     return widget.invoices.where((inv) {
+      if (inv.type != 'Tax Invoice') return false;
       if (_selectedMonth != null && inv.date.month != _selectedMonth) return false;
       if (_selectedYear != null && inv.date.year != _selectedYear) return false;
       return true;

@@ -6,6 +6,7 @@ import '../models/client.dart';
 import '../models/company.dart';
 import '../models/invoice.dart';
 import '../models/invoice_item.dart';
+import '../models/payment.dart';
 import '../models/studio_package.dart';
 import '../services/invoice_store.dart';
 import '../utils/formatters.dart';
@@ -45,6 +46,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   Company? company;
   Client? client;
   List<_ItemDraft> items = [_ItemDraft()];
+  String invoiceType = 'Tax Invoice';
   bool saving = false;
 
   @override
@@ -61,6 +63,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     dueDate = invoice.dueDate;
     company = invoice.company;
     client = invoice.client;
+    invoiceType = invoice.type;
     items = invoice.items
         .map(
           (item) => _ItemDraft(
@@ -158,6 +161,15 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
               padding: EdgeInsets.only(bottom: 14),
               child: WarningBox('Add at least one company and one client before saving.'),
             ),
+          DropdownButtonFormField<String>(
+            initialValue: invoiceType,
+            items: ['Tax Invoice', 'Quote', 'Proforma']
+                .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                .toList(),
+            onChanged: (value) => setState(() => invoiceType = value!),
+            decoration: const InputDecoration(labelText: 'Document Type'),
+          ),
+          const SizedBox(height: 12),
           DropdownButtonFormField<Company>(
             initialValue: company,
             items: widget.companies
@@ -352,6 +364,21 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
         .toList();
     if (invoiceItems.isEmpty) return null;
 
+    final currentPaid = double.tryParse(paid.text.trim()) ?? 0;
+    List<Payment> draftPayments = widget.invoiceToEdit?.payments ?? [];
+    final sumPayments = draftPayments.fold(0.0, (s, p) => s + p.amount);
+    
+    if (sumPayments != currentPaid) {
+      if (draftPayments.isEmpty && currentPaid > 0) {
+        draftPayments = [Payment(amount: currentPaid, method: 'Initial', date: DateTime.now())];
+      } else if (currentPaid > 0) {
+        final diff = currentPaid - sumPayments;
+        draftPayments = List.from(draftPayments)..add(Payment(amount: diff, method: 'Adjustment', date: DateTime.now()));
+      } else if (currentPaid == 0) {
+        draftPayments = [];
+      }
+    }
+
     return Invoice(
       id: widget.invoiceToEdit?.id ?? '',
       number: number.text.trim().isEmpty ? 'Draft' : number.text.trim(),
@@ -360,10 +387,12 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
       date: invoiceDate,
       dueDate: dueDate,
       items: invoiceItems,
-      paid: double.tryParse(paid.text.trim()) ?? 0,
+      paid: currentPaid,
       discountPercentage: double.tryParse(discountPercentage.text.trim()) ?? 0.0,
       notes: notes.text.trim(),
       createdAt: widget.invoiceToEdit?.createdAt ?? DateTime.now(),
+      type: invoiceType,
+      payments: draftPayments,
     );
   }
 
@@ -620,7 +649,7 @@ class _InvoicePreview extends StatelessWidget {
               Image.asset(logoPath, height: 72, width: 180, fit: BoxFit.contain),
               const Spacer(),
               Text(
-                'Invoice',
+                invoice.type.toUpperCase(),
                 style: textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF111827),
@@ -738,7 +767,7 @@ class _Facts extends StatelessWidget {
     return Column(
       crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        _FactLine('Invoice #', invoice.number, alignEnd: alignEnd),
+        _FactLine('${invoice.type} #', invoice.number, alignEnd: alignEnd),
         _FactLine('Date', dateFormatter.format(invoice.date), alignEnd: alignEnd),
         _FactLine('Due date', dateFormatter.format(invoice.dueDate), alignEnd: alignEnd),
       ],

@@ -7,11 +7,12 @@ import '../services/invoice_store.dart';
 import '../widgets/common_widgets.dart';
 
 class DialogField {
-  const DialogField(this.label, this.controller, {this.lines = 1});
+  const DialogField(this.label, this.controller, {this.lines = 1, this.keyboardType});
 
   final String label;
   final TextEditingController controller;
   final int lines;
+  final TextInputType? keyboardType;
 }
 
 Future<void> showCompanyDialog(
@@ -29,8 +30,8 @@ Future<void> showCompanyDialog(
     fields: [
       DialogField('Company name', name),
       DialogField('Address', address, lines: 3),
-      DialogField('Phone', phone),
-      DialogField('Email', email),
+      DialogField('Phone', phone, keyboardType: TextInputType.phone),
+      DialogField('Email', email, keyboardType: TextInputType.emailAddress),
     ],
     onSave: () => store.saveCompany(
       Company(
@@ -58,8 +59,8 @@ Future<void> showClientDialog(
     title: client == null ? 'Add client' : 'Edit client',
     fields: [
       DialogField('Client name', name),
-      DialogField('Phone', phone),
-      DialogField('Email', email),
+      DialogField('Phone (e.g. +91...)', phone, keyboardType: TextInputType.phone),
+      DialogField('Email', email, keyboardType: TextInputType.emailAddress),
       DialogField('Address', address, lines: 3),
     ],
     onSave: () => store.saveClient(
@@ -316,6 +317,7 @@ class _EntityDialogState extends State<_EntityDialog> {
                         controller: field.controller,
                         minLines: field.lines,
                         maxLines: field.lines,
+                        keyboardType: field.keyboardType,
                         decoration: InputDecoration(labelText: field.label),
                         validator: field.label.contains('name') ||
                                 field.label.contains('Company')

@@ -34,6 +34,7 @@ void main() {
       paid: 50000,
       notes: '',
       createdAt: DateTime(2026, 6, 2),
+      payments: [],
     );
 
     expect(invoice.subtotal, 215000);

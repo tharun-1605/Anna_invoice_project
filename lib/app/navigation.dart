@@ -4,10 +4,11 @@ import '../utils/pdf_generator.dart';
 import 'app_view.dart';
 
 class SideNav extends StatelessWidget {
-  const SideNav({super.key, required this.view, required this.onViewChanged});
+  const SideNav({super.key, required this.view, required this.onViewChanged, required this.pendingReminders});
 
   final AppView view;
   final ValueChanged<AppView> onViewChanged;
+  final int pendingReminders;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +58,7 @@ class SideNav extends StatelessWidget {
             active: view == AppView.packages,
             onTap: () => onViewChanged(AppView.packages),
           ),
+
           _NavButton(
             icon: Icons.account_balance_wallet_outlined,
             label: 'Ledger',
@@ -70,10 +72,25 @@ class SideNav extends StatelessWidget {
             onTap: () => onViewChanged(AppView.salesReport),
           ),
           const Spacer(),
-          FilledButton.icon(
-            onPressed: () => onViewChanged(AppView.create),
-            icon: const Icon(Icons.add),
-            label: const Text('New invoice'),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => onViewChanged(AppView.create),
+                  icon: const Icon(Icons.add),
+                  label: const Text('New invoice'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Badge(
+                isLabelVisible: pendingReminders > 0,
+                smallSize: 8,
+                child: IconButton(
+                  onPressed: () => onViewChanged(AppView.reminders),
+                  icon: const Icon(Icons.notifications_outlined),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -82,10 +99,11 @@ class SideNav extends StatelessWidget {
 }
 
 class MobileBar extends StatelessWidget {
-  const MobileBar({super.key, required this.view, required this.onViewChanged});
+  const MobileBar({super.key, required this.view, required this.onViewChanged, required this.pendingReminders});
 
   final AppView view;
   final ValueChanged<AppView> onViewChanged;
+  final int pendingReminders;
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +122,15 @@ class MobileBar extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
                 const Spacer(),
+                Badge(
+                  isLabelVisible: pendingReminders > 0,
+                  smallSize: 8,
+                  child: IconButton(
+                    onPressed: () => onViewChanged(AppView.reminders),
+                    icon: const Icon(Icons.notifications_outlined),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 FilledButton.icon(
                   onPressed: () => onViewChanged(AppView.create),
                   icon: const Icon(Icons.add),
@@ -121,6 +148,7 @@ class MobileBar extends StatelessWidget {
                 _ChipNav('Companies', AppView.companies, view, onViewChanged),
                 _ChipNav('Clients', AppView.clients, view, onViewChanged),
                 _ChipNav('Invoices', AppView.invoices, view, onViewChanged),
+
                 _ChipNav('Packages', AppView.packages, view, onViewChanged),
                 _ChipNav('Ledger', AppView.clientLedger, view, onViewChanged),
                 _ChipNav('Sales', AppView.salesReport, view, onViewChanged),
