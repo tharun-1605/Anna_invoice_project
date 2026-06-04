@@ -28,50 +28,57 @@ class SideNav extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 20),
-          _NavButton(
-            icon: Icons.dashboard_outlined,
-            label: 'Dashboard',
-            active: view == AppView.dashboard,
-            onTap: () => onViewChanged(AppView.dashboard),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _NavButton(
+                    icon: Icons.dashboard_outlined,
+                    label: 'Dashboard',
+                    active: view == AppView.dashboard,
+                    onTap: () => onViewChanged(AppView.dashboard),
+                  ),
+                  _NavButton(
+                    icon: Icons.business_outlined,
+                    label: 'Companies',
+                    active: view == AppView.companies,
+                    onTap: () => onViewChanged(AppView.companies),
+                  ),
+                  _NavButton(
+                    icon: Icons.people_alt_outlined,
+                    label: 'Clients',
+                    active: view == AppView.clients,
+                    onTap: () => onViewChanged(AppView.clients),
+                  ),
+                  _NavButton(
+                    icon: Icons.receipt_long_outlined,
+                    label: 'Invoices',
+                    active: view == AppView.invoices,
+                    onTap: () => onViewChanged(AppView.invoices),
+                  ),
+                  _NavButton(
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Packages',
+                    active: view == AppView.packages,
+                    onTap: () => onViewChanged(AppView.packages),
+                  ),
+                  _NavButton(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Ledger',
+                    active: view == AppView.clientLedger,
+                    onTap: () => onViewChanged(AppView.clientLedger),
+                  ),
+                  _NavButton(
+                    icon: Icons.bar_chart_outlined,
+                    label: 'Sales',
+                    active: view == AppView.salesReport,
+                    onTap: () => onViewChanged(AppView.salesReport),
+                  ),
+                ],
+              ),
+            ),
           ),
-          _NavButton(
-            icon: Icons.business_outlined,
-            label: 'Companies',
-            active: view == AppView.companies,
-            onTap: () => onViewChanged(AppView.companies),
-          ),
-          _NavButton(
-            icon: Icons.people_alt_outlined,
-            label: 'Clients',
-            active: view == AppView.clients,
-            onTap: () => onViewChanged(AppView.clients),
-          ),
-          _NavButton(
-            icon: Icons.receipt_long_outlined,
-            label: 'Invoices',
-            active: view == AppView.invoices,
-            onTap: () => onViewChanged(AppView.invoices),
-          ),
-          _NavButton(
-            icon: Icons.inventory_2_outlined,
-            label: 'Packages',
-            active: view == AppView.packages,
-            onTap: () => onViewChanged(AppView.packages),
-          ),
-
-          _NavButton(
-            icon: Icons.account_balance_wallet_outlined,
-            label: 'Ledger',
-            active: view == AppView.clientLedger,
-            onTap: () => onViewChanged(AppView.clientLedger),
-          ),
-          _NavButton(
-            icon: Icons.bar_chart_outlined,
-            label: 'Sales',
-            active: view == AppView.salesReport,
-            onTap: () => onViewChanged(AppView.salesReport),
-          ),
-          const Spacer(),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(

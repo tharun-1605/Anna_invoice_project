@@ -33,4 +33,13 @@ class Client {
     'address': address,
     'updatedAt': FieldValue.serverTimestamp(),
   };
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Client && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

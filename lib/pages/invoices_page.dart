@@ -40,6 +40,65 @@ class _InvoicesPageState extends State<InvoicesPage> {
   String _selectedMonth = 'All';
   String _selectedYear = 'All';
   String _selectedStatus = 'All';
+  Set<String> _selectedIds = {};
+
+  Future<void> _bulkExport() async {
+    final selectedInvoices = widget.invoices.where((i) => _selectedIds.contains(i.id)).toList();
+    if (selectedInvoices.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    try {
+      final bytes = await buildCombinedInvoicePdf(selectedInvoices);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      await DownloadHelper.saveFileWithPermission(
+        context: context,
+        name: 'bulk-invoices-${DateTime.now().millisecondsSinceEpoch}',
+        bytes: bytes,
+        fileExtension: 'pdf',
+        mimeType: MimeType.pdf,
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
+      }
+    }
+  }
+
+  Future<void> _bulkDelete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Selected Invoices?'),
+        content: Text('Are you sure you want to delete ${_selectedIds.length} invoices? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      for (final id in _selectedIds) {
+        await widget.store.deleteInvoice(id);
+      }
+      setState(() {
+        _selectedIds.clear();
+      });
+    }
+  }
 
   final List<String> _months = [
     'All',
@@ -348,6 +407,32 @@ class _InvoicesPageState extends State<InvoicesPage> {
                 ],
               ),
         const SizedBox(height: 18),
+        if (_selectedIds.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: const EdgeInsets.only(bottom: 18),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              children: [
+                Text('${_selectedIds.length} selected', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: _bulkExport,
+                  icon: const Icon(Icons.picture_as_pdf),
+                  label: const Text('Export PDF'),
+                ),
+                TextButton.icon(
+                  onPressed: _bulkDelete,
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          ),
         filtered.isEmpty
             ? const EmptyState('No invoices match your filters')
             : Column(
@@ -357,6 +442,16 @@ class _InvoicesPageState extends State<InvoicesPage> {
                         invoice: inv,
                         store: widget.store,
                         onEdit: () => widget.onEdit(inv),
+                        isSelected: _selectedIds.contains(inv.id),
+                        onSelectChanged: (val) {
+                          setState(() {
+                            if (val == true) {
+                              _selectedIds.add(inv.id);
+                            } else {
+                              _selectedIds.remove(inv.id);
+                            }
+                          });
+                        },
                       ),
                     )
                     .toList(),
@@ -391,11 +486,15 @@ class InvoiceActionRow extends StatelessWidget {
     required this.invoice,
     required this.store,
     required this.onEdit,
+    this.isSelected = false,
+    this.onSelectChanged,
   });
 
   final Invoice invoice;
   final InvoiceStore store;
   final VoidCallback onEdit;
+  final bool isSelected;
+  final ValueChanged<bool?>? onSelectChanged;
 
   Future<void> _managePayments(BuildContext context) async {
     await showDialog<void>(
@@ -563,13 +662,22 @@ class InvoiceActionRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isSelected ? Colors.blue.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade200),
       ),
-      child: isMobile
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (onSelectChanged != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Checkbox(value: isSelected, onChanged: onSelectChanged),
+            ),
+          Expanded(
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -859,6 +967,9 @@ class InvoiceActionRow extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 }

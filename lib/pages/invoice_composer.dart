@@ -13,7 +13,10 @@ import '../utils/pdf_generator.dart';
 import '../widgets/common_widgets.dart';
 import '../utils/download_helper.dart';
 import 'dart:typed_data';
+import 'dart:async';
+import 'dart:convert';
 import 'package:file_saver/file_saver.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class InvoiceComposer extends StatefulWidget {
   const InvoiceComposer({
@@ -50,12 +53,16 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   List<_ItemDraft> items = [_ItemDraft()];
   String invoiceType = 'Tax Invoice';
   bool saving = false;
+  Timer? _saveTimer;
 
   @override
   void initState() {
     super.initState();
     final invoice = widget.invoiceToEdit;
-    if (invoice == null) return;
+    if (invoice == null) {
+      _loadDraft();
+      return;
+    }
 
     number.text = invoice.number;
     paid.text = invoice.paid.toString();
@@ -78,6 +85,75 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     if (items.isEmpty) items = [_ItemDraft()];
   }
 
+  Future<void> _loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final draftStr = prefs.getString('draft_invoice_state');
+    if (draftStr == null) return;
+    
+    try {
+      final draft = jsonDecode(draftStr);
+      setState(() {
+        number.text = draft['number'] ?? '';
+        paid.text = draft['paid'] ?? '';
+        discountPercentage.text = draft['discountPercentage'] ?? '';
+        notes.text = draft['notes'] ?? '';
+        
+        if (draft['invoiceDate'] != null) invoiceDate = DateTime.parse(draft['invoiceDate']);
+        if (draft['dueDate'] != null) dueDate = DateTime.parse(draft['dueDate']);
+        if (draft['invoiceType'] != null) invoiceType = draft['invoiceType'];
+        
+        final cId = draft['companyId'];
+        if (cId != null) {
+          company = widget.companies.cast<Company?>().firstWhere((c) => c?.id == cId, orElse: () => null);
+        }
+        final clId = draft['clientId'];
+        if (clId != null) {
+          client = widget.clients.cast<Client?>().firstWhere((c) => c?.id == clId, orElse: () => null);
+        }
+        
+        final draftItems = draft['items'] as List<dynamic>?;
+        if (draftItems != null && draftItems.isNotEmpty) {
+          for (final item in items) { item.dispose(); }
+          items = draftItems.map((e) => _ItemDraft(
+            description: e['description'] ?? '',
+            quantity: e['quantity'] ?? '1',
+            price: e['price'] ?? '0',
+          )).toList();
+        }
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  void _onChanged() {
+    setState(() {});
+    if (widget.invoiceToEdit != null) return;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(seconds: 2), _saveDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final draft = {
+      'number': number.text,
+      'paid': paid.text,
+      'discountPercentage': discountPercentage.text,
+      'notes': notes.text,
+      'invoiceDate': invoiceDate.toIso8601String(),
+      'dueDate': dueDate.toIso8601String(),
+      'companyId': company?.id,
+      'clientId': client?.id,
+      'invoiceType': invoiceType,
+      'items': items.map((e) => {
+        'description': e.description.text,
+        'quantity': e.quantity.text,
+        'price': e.price.text,
+      }).toList(),
+    };
+    await prefs.setString('draft_invoice_state', jsonEncode(draft));
+  }
+
   @override
   void dispose() {
     number.dispose();
@@ -87,6 +163,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     for (final item in items) {
       item.dispose();
     }
+    _saveTimer?.cancel();
     super.dispose();
   }
 
@@ -168,7 +245,10 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
             items: ['Tax Invoice', 'Quote', 'Proforma']
                 .map((type) => DropdownMenuItem(value: type, child: Text(type)))
                 .toList(),
-            onChanged: (value) => setState(() => invoiceType = value!),
+            onChanged: (value) {
+              setState(() => invoiceType = value!);
+              _onChanged();
+            },
             decoration: const InputDecoration(labelText: 'Document Type'),
           ),
           const SizedBox(height: 12),
@@ -177,7 +257,10 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
             items: widget.companies
                 .map((item) => DropdownMenuItem(value: item, child: Text(item.name)))
                 .toList(),
-            onChanged: (value) => setState(() => company = value),
+            onChanged: (value) {
+              setState(() => company = value);
+              _onChanged();
+            },
             decoration: const InputDecoration(labelText: 'Company'),
           ),
           const SizedBox(height: 12),
@@ -186,7 +269,10 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
             items: widget.clients
                 .map((item) => DropdownMenuItem(value: item, child: Text(item.name)))
                 .toList(),
-            onChanged: (value) => setState(() => client = value),
+            onChanged: (value) {
+              setState(() => client = value);
+              _onChanged();
+            },
             decoration: const InputDecoration(labelText: 'Client'),
           ),
           const SizedBox(height: 12),
@@ -197,7 +283,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                   controller: number,
                   decoration: const InputDecoration(labelText: 'Invoice #'),
                   validator: requiredField,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => _onChanged(),
                 ),
               ),
               const SizedBox(width: 12),
@@ -206,7 +292,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                   controller: paid,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: 'Paid amount'),
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => _onChanged(),
                 ),
               ),
               const SizedBox(width: 12),
@@ -215,7 +301,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                   controller: discountPercentage,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: 'Discount (%)'),
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => _onChanged(),
                 ),
               ),
             ],
@@ -227,7 +313,10 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                 child: _DateField(
                   label: 'Date',
                   value: invoiceDate,
-                  onChanged: (value) => setState(() => invoiceDate = value),
+                  onChanged: (value) {
+                    invoiceDate = value;
+                    _onChanged();
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -235,7 +324,10 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                 child: _DateField(
                   label: 'Due date',
                   value: dueDate,
-                  onChanged: (value) => setState(() => dueDate = value),
+                  onChanged: (value) {
+                    dueDate = value;
+                    _onChanged();
+                  },
                 ),
               ),
             ],
@@ -277,15 +369,15 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                     ),
                   ),
                   onSelected: (pkg) {
+                    final lines = [
+                      if (pkg.description.isNotEmpty)
+                        '${pkg.name} - ${pkg.description}'
+                      else
+                        pkg.name,
+                      ...pkg.items,
+                    ];
+                    
                     setState(() {
-                      final lines = [
-                        if (pkg.description.isNotEmpty)
-                          '${pkg.name} - ${pkg.description}'
-                        else
-                          pkg.name,
-                        ...pkg.items,
-                      ];
-                      
                       items.add(
                         _ItemDraft(
                           description: lines.join('\n'),
@@ -294,13 +386,17 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                         ),
                       );
                     });
+                    _onChanged();
                   },
                   itemBuilder: (context) => widget.packages
                       .map((pkg) => PopupMenuItem(value: pkg, child: Text(pkg.name)))
                       .toList(),
                 ),
               TextButton.icon(
-                onPressed: () => setState(() => items.add(_ItemDraft())),
+                onPressed: () {
+                  setState(() => items.add(_ItemDraft()));
+                  _onChanged();
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('Add item'),
               ),
@@ -314,10 +410,13 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
               key: ValueKey(item),
               item: item,
               canRemove: items.length > 1,
-              onChanged: () => setState(() {}),
-              onRemove: () => setState(() {
-                items.removeAt(index).dispose();
-              }),
+              onChanged: () => _onChanged(),
+              onRemove: () {
+                setState(() {
+                  items.removeAt(index).dispose();
+                });
+                _onChanged();
+              },
             );
           }),
           const SizedBox(height: 12),
@@ -326,7 +425,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
             minLines: 2,
             maxLines: 4,
             decoration: const InputDecoration(labelText: 'Notes'),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => _onChanged(),
           ),
         ],
       ),
@@ -409,6 +508,8 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     setState(() => saving = true);
     try {
       await widget.store.saveInvoice(invoice);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('draft_invoice_state');
       _toast(widget.invoiceToEdit == null ? 'Invoice saved to Firestore.' : 'Invoice updated.');
       widget.onSaved();
     } on FirebaseException catch (error) {
