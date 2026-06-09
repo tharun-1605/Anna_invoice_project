@@ -19,12 +19,13 @@ service cloud.firestore {
     }
 
     function isCompany(data) {
-      return hasOnly(data, ['name', 'address', 'phone', 'email', 'updatedAt'])
+      return hasOnly(data, ['name', 'address', 'phone', 'email', 'updatedAt', 'signatureBase64'])
         && isString(data.name)
         && isString(data.address)
         && isString(data.phone)
         && isString(data.email)
-        && isTimestamp(data.updatedAt);
+        && isTimestamp(data.updatedAt)
+        && (data.signatureBase64 is string || !data.keys().hasAny(['signatureBase64']));
     }
 
     function isPackage(data) {
@@ -69,13 +70,14 @@ service cloud.firestore {
         && (data.isReminderDismissed is bool || !data.keys().hasAny(['isReminderDismissed']))
         && data.company is map
         && data.client is map
-        && hasOnly(data.company, ['id', 'name', 'address', 'phone', 'email'])
+        && hasOnly(data.company, ['id', 'name', 'address', 'phone', 'email', 'signatureBase64'])
         && hasOnly(data.client, ['id', 'name', 'phone', 'email', 'address'])
         && isString(data.company.id)
         && isString(data.company.name)
         && isString(data.company.address)
         && isString(data.company.phone)
         && isString(data.company.email)
+        && (data.company.signatureBase64 is string || !data.company.keys().hasAny(['signatureBase64']))
         && isString(data.client.id)
         && isString(data.client.name)
         && isString(data.client.phone)

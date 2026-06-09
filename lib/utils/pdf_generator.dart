@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
@@ -148,6 +149,25 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
           pw.SizedBox(height: 18),
           pw.Text(invoice.notes),
         ],
+        if (invoice.company.signatureBase64.isNotEmpty) ...[
+          pw.SizedBox(height: 32),
+          pw.Align(
+            alignment: pw.Alignment.bottomRight,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Image(
+                  pw.MemoryImage(base64Decode(invoice.company.signatureBase64)),
+                  width: 100,
+                  height: 50,
+                  fit: pw.BoxFit.contain,
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text('Authorized Signatory', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+              ],
+            ),
+          ),
+        ],
       ],
     ),
   );
@@ -293,6 +313,25 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
           if (invoice.notes.isNotEmpty) ...[
             pw.SizedBox(height: 18),
             pw.Text(invoice.notes),
+          ],
+          if (invoice.company.signatureBase64.isNotEmpty) ...[
+            pw.SizedBox(height: 32),
+            pw.Align(
+              alignment: pw.Alignment.bottomRight,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Image(
+                    pw.MemoryImage(base64Decode(invoice.company.signatureBase64)),
+                    width: 100,
+                    height: 50,
+                    fit: pw.BoxFit.contain,
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Authorized Signatory', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                ],
+              ),
+            ),
           ],
         ],
       ),

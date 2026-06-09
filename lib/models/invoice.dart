@@ -72,6 +72,7 @@ class Invoice {
         address: companyData['address'] ?? '',
         phone: companyData['phone'] ?? '',
         email: companyData['email'] ?? '',
+        signatureBase64: companyData['signatureBase64'] ?? '',
       ),
       client: Client(
         id: clientData['id'] ?? '',
@@ -109,6 +110,7 @@ class Invoice {
       'address': company.address,
       'phone': company.phone,
       'email': company.email,
+      'signatureBase64': company.signatureBase64,
     },
     'client': {
       'id': client.id,

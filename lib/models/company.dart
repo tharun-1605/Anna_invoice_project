@@ -7,6 +7,7 @@ class Company {
     required this.address,
     required this.phone,
     required this.email,
+    this.signatureBase64 = '',
   });
 
   final String id;
@@ -14,6 +15,7 @@ class Company {
   final String address;
   final String phone;
   final String email;
+  final String signatureBase64;
 
   factory Company.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -23,6 +25,7 @@ class Company {
       address: data['address'] ?? '',
       phone: data['phone'] ?? '',
       email: data['email'] ?? '',
+      signatureBase64: data['signatureBase64'] ?? '',
     );
   }
 
@@ -31,6 +34,7 @@ class Company {
     'address': address,
     'phone': phone,
     'email': email,
+    'signatureBase64': signatureBase64,
     'updatedAt': FieldValue.serverTimestamp(),
   };
 

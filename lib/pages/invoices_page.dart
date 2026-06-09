@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
@@ -556,12 +557,13 @@ class InvoiceActionRow extends StatelessWidget {
   }
 
   void _viewPdf(BuildContext context) {
+    final pdfFuture = buildInvoicePdf(invoice);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(title: Text('Invoice ${invoice.number}')),
           body: PdfPreview(
-            build: (format) => buildInvoicePdf(invoice),
+            build: (format) => pdfFuture,
             allowPrinting: true,
             allowSharing: true,
             canChangePageFormat: false,
@@ -596,18 +598,28 @@ class InvoiceActionRow extends StatelessWidget {
     Navigator.of(context).pop();
 
     try {
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/Invoice-${invoice.number}.pdf');
-      await file.writeAsBytes(bytes);
-      
-      if (context.mounted) {
+      if (kIsWeb) {
         final box = context.findRenderObject() as RenderBox?;
         await Share.shareXFiles(
-          [XFile(file.path)],
+          [XFile.fromData(bytes, mimeType: 'application/pdf', name: 'Invoice-${invoice.number}.pdf')],
           text: 'Here is the invoice for ${invoice.client.name}',
           subject: 'Invoice ${invoice.number}',
           sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
         );
+      } else {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/Invoice-${invoice.number}.pdf');
+        await file.writeAsBytes(bytes);
+        
+        if (context.mounted) {
+          final box = context.findRenderObject() as RenderBox?;
+          await Share.shareXFiles(
+            [XFile(file.path)],
+            text: 'Here is the invoice for ${invoice.client.name}',
+            subject: 'Invoice ${invoice.number}',
+            sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+          );
+        }
       }
     } catch (e) {
       if (context.mounted) {

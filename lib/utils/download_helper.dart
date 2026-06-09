@@ -1,8 +1,7 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -19,8 +18,8 @@ class DownloadHelper {
 
     if (kIsWeb) {
       hasPermission = true;
-    } else if (Platform.isAndroid || Platform.isIOS) {
-      if (Platform.isAndroid) {
+    } else if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         try {
           final plugin = DeviceInfoPlugin();
           final androidInfo = await plugin.androidInfo;
@@ -95,7 +94,7 @@ class DownloadHelper {
   static Future<void> requestStoragePermissionOnStartup() async {
     if (kIsWeb) return;
     
-    if (Platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       try {
         final plugin = DeviceInfoPlugin();
         final androidInfo = await plugin.androidInfo;
@@ -107,7 +106,7 @@ class DownloadHelper {
         // Fallback if plugin fails
         await Permission.storage.request();
       }
-    } else if (Platform.isIOS) {
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       await Permission.storage.request();
     }
   }
