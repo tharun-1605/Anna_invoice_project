@@ -6,6 +6,7 @@ import '../models/company.dart';
 import '../models/invoice.dart';
 import '../models/invoice_item.dart';
 import '../models/payment.dart';
+import '../models/studio_item.dart';
 import '../models/studio_package.dart';
 import '../services/invoice_store.dart';
 import '../utils/formatters.dart';
@@ -25,6 +26,7 @@ class InvoiceComposer extends StatefulWidget {
     required this.companies,
     required this.clients,
     required this.packages,
+    required this.studioItems,
     required this.onSaved,
     this.invoiceToEdit,
   });
@@ -33,6 +35,7 @@ class InvoiceComposer extends StatefulWidget {
   final List<Company> companies;
   final List<Client> clients;
   final List<StudioPackage> packages;
+  final List<StudioItem> studioItems;
   final VoidCallback onSaved;
   final Invoice? invoiceToEdit;
 
@@ -44,7 +47,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   final formKey = GlobalKey<FormState>();
   final number = TextEditingController(text: '188');
   final paid = TextEditingController(text: '0');
-  final discountPercentage = TextEditingController(text: '0');
+  final discountAmount = TextEditingController(text: '0');
   final notes = TextEditingController();
   DateTime invoiceDate = DateTime.now();
   DateTime dueDate = DateTime.now().add(const Duration(days: 7));
@@ -66,7 +69,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
 
     number.text = invoice.number;
     paid.text = invoice.paid.toString();
-    discountPercentage.text = invoice.discountPercentage.toString();
+    discountAmount.text = invoice.discountAmount.toString();
     notes.text = invoice.notes;
     invoiceDate = invoice.date;
     dueDate = invoice.dueDate;
@@ -95,7 +98,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
       setState(() {
         number.text = draft['number'] ?? '';
         paid.text = draft['paid'] ?? '';
-        discountPercentage.text = draft['discountPercentage'] ?? '';
+        discountAmount.text = draft['discountAmount'] ?? '';
         notes.text = draft['notes'] ?? '';
         
         if (draft['invoiceDate'] != null) invoiceDate = DateTime.parse(draft['invoiceDate']);
@@ -138,7 +141,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     final draft = {
       'number': number.text,
       'paid': paid.text,
-      'discountPercentage': discountPercentage.text,
+      'discountAmount': discountAmount.text,
       'notes': notes.text,
       'invoiceDate': invoiceDate.toIso8601String(),
       'dueDate': dueDate.toIso8601String(),
@@ -158,7 +161,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   void dispose() {
     number.dispose();
     paid.dispose();
-    discountPercentage.dispose();
+    discountAmount.dispose();
     notes.dispose();
     for (final item in items) {
       item.dispose();
@@ -298,9 +301,9 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
               const SizedBox(width: 12),
               Expanded(
                 child: TextFormField(
-                  controller: discountPercentage,
+                  controller: discountAmount,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Discount (%)'),
+                  decoration: const InputDecoration(labelText: 'Discount (Amt)'),
                   onChanged: (_) => _onChanged(),
                 ),
               ),
@@ -391,6 +394,12 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
                   itemBuilder: (context) => widget.packages
                       .map((pkg) => PopupMenuItem(value: pkg, child: Text(pkg.name)))
                       .toList(),
+                ),
+              if (widget.studioItems.isNotEmpty)
+                TextButton.icon(
+                  onPressed: () => _showAddonsDialog(),
+                  icon: const Icon(Icons.library_add_outlined),
+                  label: const Text('Add add-ons'),
                 ),
               TextButton.icon(
                 onPressed: () {
@@ -489,7 +498,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
       dueDate: dueDate,
       items: invoiceItems,
       paid: currentPaid,
-      discountPercentage: double.tryParse(discountPercentage.text.trim()) ?? 0.0,
+      discountAmount: double.tryParse(discountAmount.text.trim()) ?? 0.0,
       notes: notes.text.trim(),
       createdAt: widget.invoiceToEdit?.createdAt ?? DateTime.now(),
       type: invoiceType,
@@ -555,6 +564,70 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   void _toast(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _showAddonsDialog() async {
+    final selectedItems = <StudioItem>{};
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Select Add-ons'),
+            content: SizedBox(
+              width: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: widget.studioItems.map((item) {
+                    return CheckboxListTile(
+                      title: Text(item.name),
+                      subtitle: Text(money.format(item.price)),
+                      value: selectedItems.contains(item),
+                      onChanged: (checked) {
+                        setState(() {
+                          if (checked == true) {
+                            selectedItems.add(item);
+                          } else {
+                            selectedItems.remove(item);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: selectedItems.isEmpty ? null : () => Navigator.pop(context, true),
+                child: const Text('Add selected'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (confirm == true && selectedItems.isNotEmpty) {
+      final names = selectedItems.map((e) => e.name).join(', ');
+      final totalPrice = selectedItems.fold(0.0, (sum, e) => sum + e.price);
+      
+      setState(() {
+        items.add(
+          _ItemDraft(
+            description: 'Add-ons\n$names',
+            price: totalPrice.toString(),
+            quantity: '1',
+          ),
+        );
+      });
+      _onChanged();
+    }
   }
 }
 
@@ -841,8 +914,8 @@ class _InvoicePreview extends StatelessWidget {
               child: Column(
                 children: [
                   _TotalLine('Subtotal', money.format(invoice.subtotal)),
-                  if (invoice.discountPercentage > 0)
-                    _TotalLine('Discount (${invoice.discountPercentage.toStringAsFixed(0)}%)', '-${money.format(invoice.discountAmount)}'),
+                  if (invoice.discountAmount > 0)
+                    _TotalLine('Discount', '-${money.format(invoice.discountAmount)}'),
                   _TotalLine('Total', money.format(invoice.total), strong: true),
                   _TotalLine('Paid', money.format(invoice.paid)),
                   const Divider(),

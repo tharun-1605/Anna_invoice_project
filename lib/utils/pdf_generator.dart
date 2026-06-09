@@ -138,8 +138,8 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
             child: pw.Column(
               children: [
                 _pdfTotal('Subtotal', money.format(invoice.subtotal)),
-                if (invoice.discountPercentage > 0)
-                  _pdfTotal('Discount (${invoice.discountPercentage.toStringAsFixed(0)}%)', '-${money.format(invoice.discountAmount)}'),
+                if (invoice.discountAmount > 0)
+                  _pdfTotal('Discount', '-${money.format(invoice.discountAmount)}'),
                 _pdfTotal('Total', money.format(invoice.total), strong: true),
               ],
             ),
@@ -303,8 +303,8 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
               child: pw.Column(
                 children: [
                   _pdfTotal('Subtotal', money.format(invoice.subtotal)),
-                  if (invoice.discountPercentage > 0)
-                    _pdfTotal('Discount (${invoice.discountPercentage.toStringAsFixed(0)}%)', '-${money.format(invoice.discountAmount)}'),
+                  if (invoice.discountAmount > 0)
+                    _pdfTotal('Discount', '-${money.format(invoice.discountAmount)}'),
                   _pdfTotal('Total', money.format(invoice.total), strong: true),
                 ],
               ),

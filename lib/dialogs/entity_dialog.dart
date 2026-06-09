@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/client.dart';
 import '../models/company.dart';
+import '../models/lead.dart';
+import '../models/studio_item.dart';
 import '../models/studio_package.dart';
 import '../services/invoice_store.dart';
 import '../widgets/common_widgets.dart';
@@ -222,6 +224,60 @@ Future<void> showClientDialog(
         phone: phone.text.trim(),
         email: email.text.trim(),
         address: address.text.trim(),
+      ),
+    ),
+  );
+}
+
+Future<void> showLeadDialog(
+  BuildContext context,
+  InvoiceStore store, [
+  Lead? lead,
+]) async {
+  final name = TextEditingController(text: lead?.name ?? '');
+  final phone = TextEditingController(text: lead?.phone ?? '');
+  final email = TextEditingController(text: lead?.email ?? '');
+  final address = TextEditingController(text: lead?.address ?? '');
+  await showEntityDialog(
+    context: context,
+    title: lead == null ? 'Add lead' : 'Edit lead',
+    fields: [
+      DialogField('Lead name', name),
+      DialogField('Phone (e.g. +91...)', phone, keyboardType: TextInputType.phone),
+      DialogField('Email', email, keyboardType: TextInputType.emailAddress),
+      DialogField('Address', address, lines: 3),
+    ],
+    onSave: () => store.saveLead(
+      Lead(
+        id: lead?.id ?? '',
+        name: name.text.trim(),
+        phone: phone.text.trim(),
+        email: email.text.trim(),
+        address: address.text.trim(),
+      ),
+    ),
+  );
+}
+
+Future<void> showStudioItemDialog(
+  BuildContext context,
+  InvoiceStore store, [
+  StudioItem? item,
+]) async {
+  final name = TextEditingController(text: item?.name ?? '');
+  final price = TextEditingController(text: item?.price.toString() ?? '');
+  await showEntityDialog(
+    context: context,
+    title: item == null ? 'Add standalone item' : 'Edit standalone item',
+    fields: [
+      DialogField('Item name', name),
+      DialogField('Price', price, keyboardType: TextInputType.number),
+    ],
+    onSave: () => store.saveStudioItem(
+      StudioItem(
+        id: item?.id ?? '',
+        name: name.text.trim(),
+        price: double.tryParse(price.text.trim()) ?? 0,
       ),
     ),
   );

@@ -184,14 +184,16 @@ class InfoCard extends StatelessWidget {
     required this.onEdit,
     this.onDelete,
     this.onView,
+    this.extraAction,
   });
 
   final String title;
   final List<String> lines;
   final IconData icon;
-  final VoidCallback onEdit;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onView;
+  final Widget? extraAction;
 
   @override
   Widget build(BuildContext context) {
@@ -220,11 +222,12 @@ class InfoCard extends StatelessWidget {
                     onPressed: onView,
                     icon: const Icon(Icons.visibility_outlined),
                   ),
-                IconButton(
-                  tooltip: 'Edit',
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined),
-                ),
+                if (onEdit != null)
+                  IconButton(
+                    tooltip: 'Edit',
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
                 if (onDelete != null)
                   IconButton(
                     tooltip: 'Delete',
@@ -237,6 +240,7 @@ class InfoCard extends StatelessWidget {
             ...lines
                 .where((line) => line.trim().isNotEmpty)
                 .map((line) => Text(line, maxLines: 2, overflow: TextOverflow.ellipsis)),
+            if (extraAction != null) extraAction!,
           ],
         ),
       ),

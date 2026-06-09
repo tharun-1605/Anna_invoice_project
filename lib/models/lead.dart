@@ -1,13 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Client {
-  Client({
+class Lead {
+  Lead({
     required this.id,
     required this.name,
     required this.phone,
     required this.email,
     required this.address,
-    this.fromLead = false,
   });
 
   final String id;
@@ -15,17 +14,15 @@ class Client {
   final String phone;
   final String email;
   final String address;
-  final bool fromLead;
 
-  factory Client.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory Lead.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
-    return Client(
+    return Lead(
       id: doc.id,
       name: data['name'] ?? '',
       phone: data['phone'] ?? '',
       email: data['email'] ?? '',
       address: data['address'] ?? '',
-      fromLead: data['fromLead'] ?? false,
     );
   }
 
@@ -35,13 +32,12 @@ class Client {
     'email': email,
     'address': address,
     'updatedAt': FieldValue.serverTimestamp(),
-    'fromLead': fromLead,
   };
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Client && other.id == id;
+    return other is Lead && other.id == id;
   }
 
   @override

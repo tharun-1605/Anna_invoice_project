@@ -42,6 +42,7 @@ class ClientsPage extends StatelessWidget {
                     title: client.name,
                     lines: [client.phone, client.email, client.address],
                     icon: Icons.person_outline,
+                    extraAction: client.fromLead ? const Padding(padding: EdgeInsets.only(top: 8), child: Chip(label: Text('From Lead', style: TextStyle(fontSize: 10)), visualDensity: VisualDensity.compact)) : null,
                     onView: () => onViewLedger(client),
                     onEdit: () => showClientDialog(context, store, client),
                     onDelete: () async {

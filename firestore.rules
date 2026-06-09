@@ -38,11 +38,28 @@ service cloud.firestore {
     }
 
     function isClient(data) {
+      return hasOnly(data, ['name', 'phone', 'email', 'address', 'updatedAt', 'fromLead'])
+        && isString(data.name)
+        && isString(data.phone)
+        && isString(data.email)
+        && isString(data.address)
+        && isTimestamp(data.updatedAt)
+        && (data.fromLead is bool || !data.keys().hasAny(['fromLead']));
+    }
+
+    function isLead(data) {
       return hasOnly(data, ['name', 'phone', 'email', 'address', 'updatedAt'])
         && isString(data.name)
         && isString(data.phone)
         && isString(data.email)
         && isString(data.address)
+        && isTimestamp(data.updatedAt);
+    }
+
+    function isStudioItem(data) {
+      return hasOnly(data, ['name', 'price', 'updatedAt'])
+        && isString(data.name)
+        && isNumber(data.price)
         && isTimestamp(data.updatedAt);
     }
 
@@ -61,7 +78,7 @@ service cloud.firestore {
           'notes',
           'createdAt',
           'type',
-          'discountPercentage',
+          'discountAmount',
           'payments',
           'isReminderDismissed'
         ])
@@ -93,7 +110,7 @@ service cloud.firestore {
         && isNumber(data.total)
         && isNumber(data.paid)
         && isNumber(data.amountDue)
-        && isNumber(data.discountPercentage)
+        && isNumber(data.discountAmount)
         && isString(data.type)
         && data.payments is list;
     }
@@ -111,6 +128,16 @@ service cloud.firestore {
     match /packages/{packageId} {
       allow read, delete: if true;
       allow create, update: if isPackage(request.resource.data);
+    }
+
+    match /leads/{leadId} {
+      allow read, delete: if true;
+      allow create, update: if isLead(request.resource.data);
+    }
+
+    match /studio_items/{itemId} {
+      allow read, delete: if true;
+      allow create, update: if isStudioItem(request.resource.data);
     }
 
     match /invoices/{invoiceId} {

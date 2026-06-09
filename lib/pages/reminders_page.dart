@@ -26,7 +26,7 @@ class RemindersPage extends StatelessWidget {
       dueDate: invoice.dueDate,
       items: invoice.items,
       paid: invoice.paid,
-      discountPercentage: invoice.discountPercentage,
+      discountAmount: invoice.discountAmount,
       notes: invoice.notes,
       createdAt: invoice.createdAt,
       type: invoice.type,

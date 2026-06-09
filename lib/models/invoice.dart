@@ -17,7 +17,7 @@ class Invoice {
     required this.notes,
     required this.createdAt,
     required this.payments,
-    this.discountPercentage = 0.0,
+    this.discountAmount = 0.0,
     this.type = 'Tax Invoice',
     this.isReminderDismissed = false,
   });
@@ -32,13 +32,12 @@ class Invoice {
   final double paid;
   final String notes;
   final DateTime createdAt;
-  final double discountPercentage;
+  final double discountAmount;
   final String type;
   final List<Payment> payments;
   final bool isReminderDismissed;
 
   double get subtotal => items.fold(0, (total, item) => total + item.amount);
-  double get discountAmount => subtotal * (discountPercentage / 100);
   double get total => subtotal - discountAmount;
   double get due => (total - paid).clamp(0, double.infinity);
 
@@ -87,7 +86,7 @@ class Invoice {
           .map((item) => InvoiceItem.fromJson(Map<String, dynamic>.from(item)))
           .toList(),
       paid: paidAmount,
-      discountPercentage: (data['discountPercentage'] ?? 0).toDouble(),
+      discountAmount: (data['discountAmount'] ?? 0).toDouble(),
       notes: data['notes'] ?? '',
       createdAt: _toDate(data['createdAt']),
       type: data['type'] ?? 'Tax Invoice',
@@ -123,7 +122,7 @@ class Invoice {
     'dueDate': Timestamp.fromDate(dueDate),
     'items': items.map((item) => item.toJson()).toList(),
     'subtotal': subtotal,
-    'discountPercentage': discountPercentage,
+    'discountAmount': discountAmount,
     'total': total,
     'paid': paid,
     'amountDue': due,

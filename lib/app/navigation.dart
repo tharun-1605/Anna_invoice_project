@@ -45,6 +45,12 @@ class SideNav extends StatelessWidget {
                     onTap: () => onViewChanged(AppView.companies),
                   ),
                   _NavButton(
+                    icon: Icons.person_add_alt_1_outlined,
+                    label: 'Leads',
+                    active: view == AppView.leads,
+                    onTap: () => onViewChanged(AppView.leads),
+                  ),
+                  _NavButton(
                     icon: Icons.people_alt_outlined,
                     label: 'Clients',
                     active: view == AppView.clients,
@@ -153,6 +159,7 @@ class MobileBar extends StatelessWidget {
               children: [
                 _ChipNav('Dashboard', AppView.dashboard, view, onViewChanged),
                 _ChipNav('Companies', AppView.companies, view, onViewChanged),
+                _ChipNav('Leads', AppView.leads, view, onViewChanged),
                 _ChipNav('Clients', AppView.clients, view, onViewChanged),
                 _ChipNav('Invoices', AppView.invoices, view, onViewChanged),
 

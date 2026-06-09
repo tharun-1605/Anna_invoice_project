@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/client.dart';
 import '../models/company.dart';
 import '../models/invoice.dart';
+import '../models/lead.dart';
+import '../models/studio_item.dart';
 import '../models/studio_package.dart';
 import '../pages/client_ledger_page.dart';
 import '../pages/clients_page.dart';
@@ -10,6 +12,7 @@ import '../pages/companies_page.dart';
 import '../pages/dashboard_page.dart';
 import '../pages/invoice_composer.dart';
 import '../pages/invoices_page.dart';
+import '../pages/leads_page.dart';
 import '../pages/packages_page.dart';
 import '../pages/reminders_page.dart';
 import '../pages/sales_page.dart';
@@ -22,9 +25,11 @@ class AppContent extends StatelessWidget {
     required this.view,
     required this.store,
     required this.companies,
+    required this.leads,
     required this.clients,
     required this.invoices,
     required this.packages,
+    required this.studioItems,
     required this.loading,
     required this.onViewChanged,
     required this.onEditInvoice,
@@ -36,9 +41,11 @@ class AppContent extends StatelessWidget {
   final AppView view;
   final InvoiceStore store;
   final List<Company> companies;
+  final List<Lead> leads;
   final List<Client> clients;
   final List<Invoice> invoices;
   final List<StudioPackage> packages;
+  final List<StudioItem> studioItems;
   final bool loading;
   final ValueChanged<AppView> onViewChanged;
   final ValueChanged<Invoice> onEditInvoice;
@@ -58,6 +65,10 @@ class AppContent extends StatelessWidget {
           onCreate: () => onViewChanged(AppView.create),
         ),
       AppView.companies => CompaniesPage(store: store, companies: companies),
+      AppView.leads => LeadsPage(
+          store: store,
+          leads: leads,
+        ),
       AppView.clients => ClientsPage(
           store: store,
           clients: clients,
@@ -78,12 +89,13 @@ class AppContent extends StatelessWidget {
           invoices: invoices,
           store: store,
         ),
-      AppView.packages => PackagesPage(store: store, packages: packages),
+      AppView.packages => PackagesPage(store: store, packages: packages, studioItems: studioItems),
       AppView.create => InvoiceComposer(
           store: store,
           companies: companies,
           clients: clients,
           packages: packages,
+          studioItems: studioItems,
           onSaved: () => onViewChanged(AppView.invoices),
           invoiceToEdit: invoiceToEdit,
         ),
