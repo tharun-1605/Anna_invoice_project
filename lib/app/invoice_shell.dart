@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/client.dart';
 import '../models/company.dart';
@@ -109,8 +110,34 @@ class _InvoiceShellState extends State<InvoiceShell> {
                                     packagesSnapshot.connectionState == ConnectionState.waiting ||
                                     studioItemsSnapshot.connectionState == ConnectionState.waiting;
 
-                    return Scaffold(
-                      body: SafeArea(
+                    return PopScope(
+                      canPop: false,
+                      onPopInvokedWithResult: (didPop, result) async {
+                        if (didPop) return;
+                        final shouldPop = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Exit App'),
+                            content: const Text('Are you sure you want to exit the app?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(false),
+                                child: const Text('Cancel'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.of(context).pop(true),
+                                child: const Text('Exit'),
+                              ),
+                            ],
+                          ),
+                        ) ?? false;
+                        
+                        if (shouldPop && context.mounted) {
+                          SystemNavigator.pop();
+                        }
+                      },
+                      child: Scaffold(
+                        body: SafeArea(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             final wide = constraints.maxWidth >= 900;
@@ -160,7 +187,8 @@ class _InvoiceShellState extends State<InvoiceShell> {
                           },
                         ),
                       ),
-                    );
+                    ),
+                  );
                       },
                     );
                   },
