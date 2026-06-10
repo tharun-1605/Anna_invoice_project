@@ -160,7 +160,15 @@ class _InvoicesPageState extends State<InvoicesPage> {
       }
 
       return true;
-    }).toList();
+    }).toList()
+      ..sort((a, b) {
+        final numA = int.tryParse(a.number);
+        final numB = int.tryParse(b.number);
+        if (numA != null && numB != null) {
+          return numB.compareTo(numA); // descending
+        }
+        return b.number.compareTo(a.number); // descending
+      });
 
     final filteredTotal = filtered.fold<double>(0, (sum, inv) => sum + inv.total);
     final filteredPaid = filtered.fold<double>(0, (sum, inv) => sum + inv.paid);
@@ -1070,10 +1078,11 @@ class _ManagePaymentsDialogState extends State<ManagePaymentsDialog> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
+                        flex: 2,
                         child: TextFormField(
                           initialValue: payments[i].amount.toString(),
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Amount'),
+                          decoration: const InputDecoration(labelText: 'Amount', isDense: true),
                           onChanged: (val) {
                             payments[i] = Payment(
                               amount: double.tryParse(val) ?? 0,
@@ -1084,13 +1093,17 @@ class _ManagePaymentsDialogState extends State<ManagePaymentsDialog> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Expanded(
+                        flex: 2,
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
                           initialValue: payments[i].method,
-                          decoration: const InputDecoration(labelText: 'Method'),
-                          items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                          decoration: const InputDecoration(labelText: 'Method', isDense: true),
+                          items: {
+                            ...methods,
+                            if (!methods.contains(payments[i].method)) payments[i].method
+                          }.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
                           onChanged: (val) {
                             if (val != null) {
                               setState(() {
@@ -1105,6 +1118,32 @@ class _ManagePaymentsDialogState extends State<ManagePaymentsDialog> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      Expanded(
+                        flex: 3,
+                        child: InkWell(
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: payments[i].date,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (date != null) {
+                              setState(() {
+                                payments[i] = Payment(
+                                  amount: payments[i].amount,
+                                  method: payments[i].method,
+                                  date: date,
+                                );
+                              });
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration: const InputDecoration(labelText: 'Date', isDense: true),
+                            child: Text(dateFormatter.format(payments[i].date)),
+                          ),
+                        ),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         tooltip: 'Delete Installment',
