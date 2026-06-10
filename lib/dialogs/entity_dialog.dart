@@ -11,13 +11,15 @@ import '../services/invoice_store.dart';
 import '../widgets/common_widgets.dart';
 
 class DialogField {
-  const DialogField(this.label, this.controller, {this.lines = 1, this.keyboardType, this.choices});
+  const DialogField(this.label, this.controller, {this.lines = 1, this.keyboardType, this.choices, this.isDate = false, this.allowCustomChoice = false});
 
   final String label;
   final TextEditingController controller;
   final int lines;
   final TextInputType? keyboardType;
   final List<String>? choices;
+  final bool isDate;
+  final bool allowCustomChoice;
 }
 
 Future<void> showCompanyDialog(
@@ -219,9 +221,9 @@ Future<void> showClientDialog(
       DialogField('Client name', name),
       DialogField('Phone (e.g. +91...)', phone, keyboardType: TextInputType.phone),
       DialogField('Email', email, keyboardType: TextInputType.emailAddress),
-      DialogField('Event Date (e.g., YYYY-MM-DD)', eventDate, keyboardType: TextInputType.datetime),
+      DialogField('Event Date', eventDate, isDate: true),
       DialogField('Priority', priority, choices: ['High', 'Medium', 'Low']),
-      DialogField('Reference (e.g. Social Media, Friend)', reference),
+      DialogField('Reference (e.g. Social Media, Friend)', reference, choices: ['Instagram', 'Facebook', 'Friend', 'Website', 'Google', 'Other'], allowCustomChoice: true),
       DialogField('Address', address, lines: 3),
     ],
     onSave: () => store.saveClient(
@@ -258,9 +260,9 @@ Future<void> showLeadDialog(
       DialogField('Lead name', name),
       DialogField('Phone (e.g. +91...)', phone, keyboardType: TextInputType.phone),
       DialogField('Email', email, keyboardType: TextInputType.emailAddress),
-      DialogField('Event Date (e.g., YYYY-MM-DD)', eventDate, keyboardType: TextInputType.datetime),
+      DialogField('Event Date', eventDate, isDate: true),
       DialogField('Priority', priority, choices: ['High', 'Medium', 'Low']),
-      DialogField('Reference (e.g. Social Media, Friend)', reference),
+      DialogField('Reference (e.g. Social Media, Friend)', reference, choices: ['Instagram', 'Facebook', 'Friend', 'Website', 'Google', 'Other'], allowCustomChoice: true),
       DialogField('Address', address, lines: 3),
     ],
     onSave: () => store.saveLead(
@@ -540,7 +542,7 @@ class _EntityDialogState extends State<_EntityDialog> {
                   .map(
                     (field) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: field.choices != null
+                      child: field.choices != null && !field.allowCustomChoice
                           ? DropdownButtonFormField<String>(
                               initialValue: field.controller.text.isEmpty ? field.choices!.first : field.controller.text,
                               decoration: InputDecoration(labelText: field.label),
@@ -556,17 +558,56 @@ class _EntityDialogState extends State<_EntityDialog> {
                                 }
                               },
                             )
-                          : TextFormField(
-                              controller: field.controller,
-                              minLines: field.lines,
-                              maxLines: field.lines,
-                              keyboardType: field.keyboardType,
-                              decoration: InputDecoration(labelText: field.label),
-                              validator: field.label.contains('name') ||
-                                      field.label.contains('Company')
-                                  ? requiredField
-                                  : null,
-                            ),
+                          : field.isDate
+                              ? TextFormField(
+                                  controller: field.controller,
+                                  readOnly: true,
+                                  decoration: InputDecoration(
+                                    labelText: field.label,
+                                    suffixIcon: const Icon(Icons.calendar_today),
+                                  ),
+                                  onTap: () async {
+                                    final initial = DateTime.tryParse(field.controller.text);
+                                    final dt = await showDatePicker(
+                                      context: context,
+                                      initialDate: initial ?? DateTime.now(),
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime(2100),
+                                    );
+                                    if (dt != null) {
+                                      field.controller.text = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
+                                    }
+                                  },
+                                )
+                              : TextFormField(
+                                  controller: field.controller,
+                                  minLines: field.lines,
+                                  maxLines: field.lines,
+                                  keyboardType: field.keyboardType,
+                                  decoration: InputDecoration(
+                                    labelText: field.label,
+                                    suffixIcon: field.choices != null && field.allowCustomChoice
+                                        ? PopupMenuButton<String>(
+                                            icon: const Icon(Icons.arrow_drop_down),
+                                            onSelected: (String value) {
+                                              field.controller.text = value;
+                                            },
+                                            itemBuilder: (BuildContext context) {
+                                              return field.choices!.map((String value) {
+                                                return PopupMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(value),
+                                                );
+                                              }).toList();
+                                            },
+                                          )
+                                        : null,
+                                  ),
+                                  validator: field.label.contains('name') ||
+                                          field.label.contains('Company')
+                                      ? requiredField
+                                      : null,
+                                ),
                     ),
                   )
                   .toList(),

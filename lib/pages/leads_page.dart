@@ -5,7 +5,7 @@ import '../models/lead.dart';
 import '../services/invoice_store.dart';
 import '../widgets/common_widgets.dart';
 
-class LeadsPage extends StatelessWidget {
+class LeadsPage extends StatefulWidget {
   const LeadsPage({
     super.key,
     required this.store,
@@ -18,25 +18,45 @@ class LeadsPage extends StatelessWidget {
   final ValueChanged<Lead>? onCreateQuote;
 
   @override
+  State<LeadsPage> createState() => _LeadsPageState();
+}
+
+class _LeadsPageState extends State<LeadsPage> {
+  bool _showRejected = false;
+
+  @override
   Widget build(BuildContext context) {
+    final filteredLeads = widget.leads.where((l) => _showRejected || !l.isRejected).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         PageHeader(
           title: 'Leads',
           subtitle: 'Manage potential clients and convert them to active clients.',
-          action: FilledButton.icon(
-            onPressed: () => showLeadDialog(context, store),
-            icon: const Icon(Icons.person_add_alt),
-            label: const Text('Add lead'),
+          action: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilterChip(
+                label: const Text('Show Rejected'),
+                selected: _showRejected,
+                onSelected: (val) => setState(() => _showRejected = val),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () => showLeadDialog(context, widget.store),
+                icon: const Icon(Icons.person_add_alt),
+                label: const Text('Add lead'),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 18),
-        if (leads.isEmpty)
-          const Panel(title: 'Leads', child: EmptyState('Add a lead'))
+        if (filteredLeads.isEmpty)
+          const Panel(title: 'Leads', child: EmptyState('No leads found'))
         else
           ResponsiveGrid(
-            children: leads
+            children: filteredLeads
                 .map(
                   (lead) => InfoCard(
                     title: lead.name,
@@ -50,11 +70,11 @@ class LeadsPage extends StatelessWidget {
                     ],
                     icon: Icons.person_add_alt_1_outlined,
                     onView: null,
-                    onEdit: () => showLeadDialog(context, store, lead),
+                    onEdit: () => showLeadDialog(context, widget.store, lead),
                     onDelete: () async {
                       final confirm = await confirmDelete(context, lead.name);
                       if (confirm == true) {
-                        await store.deleteLead(lead.id);
+                        await widget.store.deleteLead(lead.id);
                       }
                     },
                     extraAction: lead.isRejected
@@ -103,7 +123,7 @@ class LeadsPage extends StatelessWidget {
                                             ),
                                           );
                                           if (confirm == true) {
-                                            await store.convertLeadToClient(lead);
+                                            await widget.store.convertLeadToClient(lead);
                                             if (context.mounted) {
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(content: Text('${lead.name} converted to client')),
@@ -119,11 +139,11 @@ class LeadsPage extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    if (onCreateQuote != null) ...[
+                                    if (widget.onCreateQuote != null) ...[
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: FilledButton.icon(
-                                          onPressed: () => onCreateQuote!(lead),
+                                          onPressed: () => widget.onCreateQuote!(lead),
                                           icon: const Icon(Icons.request_quote_outlined, size: 18),
                                           label: const Text('Quote'),
                                           style: FilledButton.styleFrom(
@@ -167,7 +187,7 @@ class LeadsPage extends StatelessWidget {
                                       ),
                                     );
                                     if (confirm == true) {
-                                      await store.rejectLead(lead.id, reasonCtrl.text.trim());
+                                      await widget.store.rejectLead(lead.id, reasonCtrl.text.trim());
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(content: Text('${lead.name} rejected')),

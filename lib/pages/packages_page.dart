@@ -48,7 +48,11 @@ class PackagesPage extends StatelessWidget {
                 .map(
                   (pkg) => InfoCard(
                     title: pkg.name,
-                    lines: [pkg.description, 'Price: ${money.format(pkg.price)}'],
+                    lines: [
+                      pkg.description, 
+                      'Price: ${money.format(pkg.price)}',
+                      if (pkg.items.isNotEmpty) 'Items: ${pkg.items.join(', ')}',
+                    ],
                     icon: Icons.inventory_2_outlined,
                     onEdit: () => showPackageDialog(context, store, pkg),
                     onDelete: () async {
