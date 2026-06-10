@@ -38,22 +38,32 @@ service cloud.firestore {
     }
 
     function isClient(data) {
-      return hasOnly(data, ['name', 'phone', 'email', 'address', 'updatedAt', 'fromLead'])
+      return hasOnly(data, ['name', 'phone', 'email', 'address', 'updatedAt', 'fromLead', 'eventDate', 'priority', 'reference', 'isRejected', 'rejectReason'])
         && isString(data.name)
         && isString(data.phone)
         && isString(data.email)
         && isString(data.address)
         && isTimestamp(data.updatedAt)
-        && (data.fromLead is bool || !data.keys().hasAny(['fromLead']));
+        && (data.fromLead is bool || !data.keys().hasAny(['fromLead']))
+        && (data.eventDate is string || !data.keys().hasAny(['eventDate']))
+        && (data.priority is string || !data.keys().hasAny(['priority']))
+        && (data.reference is string || !data.keys().hasAny(['reference']))
+        && (data.isRejected is bool || !data.keys().hasAny(['isRejected']))
+        && (data.rejectReason is string || !data.keys().hasAny(['rejectReason']));
     }
 
     function isLead(data) {
-      return hasOnly(data, ['name', 'phone', 'email', 'address', 'updatedAt'])
+      return hasOnly(data, ['name', 'phone', 'email', 'address', 'updatedAt', 'eventDate', 'priority', 'reference', 'isRejected', 'rejectReason'])
         && isString(data.name)
         && isString(data.phone)
         && isString(data.email)
         && isString(data.address)
-        && isTimestamp(data.updatedAt);
+        && isTimestamp(data.updatedAt)
+        && (data.eventDate is string || !data.keys().hasAny(['eventDate']))
+        && (data.priority is string || !data.keys().hasAny(['priority']))
+        && (data.reference is string || !data.keys().hasAny(['reference']))
+        && (data.isRejected is bool || !data.keys().hasAny(['isRejected']))
+        && (data.rejectReason is string || !data.keys().hasAny(['rejectReason']));
     }
 
     function isStudioItem(data) {
