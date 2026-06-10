@@ -542,7 +542,7 @@ class _EntityDialogState extends State<_EntityDialog> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: field.choices != null
                           ? DropdownButtonFormField<String>(
-                              value: field.controller.text.isEmpty ? field.choices!.first : field.controller.text,
+                              initialValue: field.controller.text.isEmpty ? field.choices!.first : field.controller.text,
                               decoration: InputDecoration(labelText: field.label),
                               items: field.choices!.map((String value) {
                                 return DropdownMenuItem<String>(

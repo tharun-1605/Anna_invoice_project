@@ -41,7 +41,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
   String _selectedMonth = 'All';
   String _selectedYear = 'All';
   String _selectedStatus = 'All';
-  Set<String> _selectedIds = {};
+  final Set<String> _selectedIds = {};
 
   Future<void> _bulkExport() async {
     final selectedInvoices = widget.invoices.where((i) => _selectedIds.contains(i.id)).toList();

@@ -53,7 +53,7 @@ class PageHeader extends StatelessWidget {
                 ],
               ),
             ),
-            if (action != null) action!,
+            ?action,
           ],
         );
       },
@@ -240,7 +240,7 @@ class InfoCard extends StatelessWidget {
             ...lines
                 .where((line) => line.trim().isNotEmpty)
                 .map((line) => Text(line, maxLines: 2, overflow: TextOverflow.ellipsis)),
-            if (extraAction != null) extraAction!,
+            ?extraAction,
           ],
         ),
       ),
