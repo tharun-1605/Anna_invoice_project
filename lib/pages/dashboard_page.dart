@@ -29,10 +29,6 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final paid = invoices.fold<double>(
-      0,
-      (runningTotal, invoice) => runningTotal + invoice.paid,
-    );
     final total = invoices.fold<double>(
       0,
       (runningTotal, invoice) => runningTotal + invoice.total,
