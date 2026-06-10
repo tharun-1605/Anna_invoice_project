@@ -8,6 +8,9 @@ class Client {
     required this.email,
     required this.address,
     this.fromLead = false,
+    this.eventDate = '',
+    this.priority = 'Medium',
+    this.reference = '',
   });
 
   final String id;
@@ -16,6 +19,9 @@ class Client {
   final String email;
   final String address;
   final bool fromLead;
+  final String eventDate;
+  final String priority;
+  final String reference;
 
   factory Client.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -26,6 +32,9 @@ class Client {
       email: data['email'] ?? '',
       address: data['address'] ?? '',
       fromLead: data['fromLead'] ?? false,
+      eventDate: data['eventDate'] ?? '',
+      priority: data['priority'] ?? 'Medium',
+      reference: data['reference'] ?? '',
     );
   }
 
@@ -36,6 +45,9 @@ class Client {
     'address': address,
     'updatedAt': FieldValue.serverTimestamp(),
     'fromLead': fromLead,
+    'eventDate': eventDate,
+    'priority': priority,
+    'reference': reference,
   };
 
   @override

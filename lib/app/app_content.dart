@@ -34,8 +34,11 @@ class AppContent extends StatelessWidget {
     required this.onViewChanged,
     required this.onEditInvoice,
     required this.onViewLedger,
+    required this.onCreateQuote,
     this.invoiceToEdit,
     this.ledgerClient,
+    this.initialInvoiceType = 'Tax Invoice',
+    this.initialComposerClient,
   });
 
   final AppView view;
@@ -50,8 +53,11 @@ class AppContent extends StatelessWidget {
   final ValueChanged<AppView> onViewChanged;
   final ValueChanged<Invoice> onEditInvoice;
   final ValueChanged<Client> onViewLedger;
+  final ValueChanged<Lead> onCreateQuote;
   final Invoice? invoiceToEdit;
   final Client? ledgerClient;
+  final String initialInvoiceType;
+  final Client? initialComposerClient;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +74,7 @@ class AppContent extends StatelessWidget {
       AppView.leads => LeadsPage(
           store: store,
           leads: leads,
+          onCreateQuote: onCreateQuote,
         ),
       AppView.clients => ClientsPage(
           store: store,
@@ -93,11 +100,26 @@ class AppContent extends StatelessWidget {
       AppView.create => InvoiceComposer(
           store: store,
           companies: companies,
-          clients: clients,
+          clients: [
+            ...clients,
+            if (initialComposerClient != null && !clients.any((c) => c.id == initialComposerClient!.id))
+              initialComposerClient!,
+            ...leads.map((l) => Client(
+              id: 'lead_${l.id}',
+              name: '${l.name} (Lead)',
+              phone: l.phone,
+              email: l.email,
+              address: l.address,
+              fromLead: true,
+            )).where((lc) => !clients.any((c) => c.id == lc.id) && initialComposerClient?.id != lc.id),
+          ],
           packages: packages,
+          invoices: invoices,
           studioItems: studioItems,
           onSaved: () => onViewChanged(AppView.invoices),
           invoiceToEdit: invoiceToEdit,
+          initialType: initialInvoiceType,
+          initialClient: initialComposerClient,
         ),
     };
 

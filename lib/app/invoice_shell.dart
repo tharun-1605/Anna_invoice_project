@@ -25,6 +25,8 @@ class _InvoiceShellState extends State<InvoiceShell> {
   AppView view = AppView.dashboard;
   Invoice? invoiceToEdit;
   Client? ledgerClient;
+  String initialInvoiceType = 'Tax Invoice';
+  Client? initialComposerClient;
 
   @override
   void initState() {
@@ -38,6 +40,8 @@ class _InvoiceShellState extends State<InvoiceShell> {
       view = next;
       if (next != AppView.create) {
         invoiceToEdit = null;
+        initialInvoiceType = 'Tax Invoice';
+        initialComposerClient = null;
       }
     });
   }
@@ -53,6 +57,21 @@ class _InvoiceShellState extends State<InvoiceShell> {
     setState(() {
       ledgerClient = client;
       view = AppView.clientLedger;
+    });
+  }
+
+  void _createQuote(Lead lead) {
+    setState(() {
+      initialInvoiceType = 'Quote';
+      initialComposerClient = Client(
+        id: 'lead_${lead.id}',
+        name: '${lead.name} (Lead)',
+        phone: lead.phone,
+        email: lead.email,
+        address: lead.address,
+        fromLead: true,
+      );
+      view = AppView.create;
     });
   }
 
@@ -108,8 +127,11 @@ class _InvoiceShellState extends State<InvoiceShell> {
                               onViewChanged: _changeView,
                               onEditInvoice: _editInvoice,
                               onViewLedger: _viewLedger,
+                              onCreateQuote: _createQuote,
                               invoiceToEdit: invoiceToEdit,
                               ledgerClient: ledgerClient,
+                              initialInvoiceType: initialInvoiceType,
+                              initialComposerClient: initialComposerClient,
                             );
 
                             final now = DateTime.now();

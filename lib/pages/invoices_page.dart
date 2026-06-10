@@ -695,9 +695,12 @@ class InvoiceActionRow extends StatelessWidget {
               child: Checkbox(value: isSelected, onChanged: onSelectChanged),
             ),
           Expanded(
-            child: isMobile
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -987,10 +990,48 @@ class InvoiceActionRow extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
+            if (invoice.payments.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              const Text('Payment History', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54, fontSize: 12)),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Column(
+                  children: invoice.payments.map((p) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(dateFormatter.format(p.date), style: const TextStyle(fontSize: 13))),
+                          Expanded(child: Text(p.method, style: const TextStyle(fontSize: 13, color: Colors.black54))),
+                          Expanded(
+                            child: Text(
+                              money.format(p.amount),
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
-    );
+    ],
+  ),
+);
   }
 }
 

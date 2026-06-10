@@ -101,6 +101,13 @@ class InvoiceStore {
   Future<void> deleteLead(String id) =>
       db.collection('leads').doc(id).delete();
 
+  Future<void> rejectLead(String id, String reason) =>
+      db.collection('leads').doc(id).update({
+        'isRejected': true,
+        'rejectReason': reason,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
   Future<void> convertLeadToClient(Lead lead) async {
     final batch = db.batch();
     

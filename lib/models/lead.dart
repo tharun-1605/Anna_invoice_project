@@ -7,6 +7,11 @@ class Lead {
     required this.phone,
     required this.email,
     required this.address,
+    this.eventDate = '',
+    this.priority = 'Medium',
+    this.reference = '',
+    this.isRejected = false,
+    this.rejectReason = '',
   });
 
   final String id;
@@ -14,6 +19,11 @@ class Lead {
   final String phone;
   final String email;
   final String address;
+  final String eventDate;
+  final String priority;
+  final String reference;
+  final bool isRejected;
+  final String rejectReason;
 
   factory Lead.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -23,6 +33,11 @@ class Lead {
       phone: data['phone'] ?? '',
       email: data['email'] ?? '',
       address: data['address'] ?? '',
+      eventDate: data['eventDate'] ?? '',
+      priority: data['priority'] ?? 'Medium',
+      reference: data['reference'] ?? '',
+      isRejected: data['isRejected'] ?? false,
+      rejectReason: data['rejectReason'] ?? '',
     );
   }
 
@@ -31,6 +46,11 @@ class Lead {
     'phone': phone,
     'email': email,
     'address': address,
+    'eventDate': eventDate,
+    'priority': priority,
+    'reference': reference,
+    'isRejected': isRejected,
+    'rejectReason': rejectReason,
     'updatedAt': FieldValue.serverTimestamp(),
   };
 

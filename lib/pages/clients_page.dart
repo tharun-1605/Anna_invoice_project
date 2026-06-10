@@ -40,7 +40,14 @@ class ClientsPage extends StatelessWidget {
                 .map(
                   (client) => InfoCard(
                     title: client.name,
-                    lines: [client.phone, client.email, client.address],
+                    lines: [
+                      client.phone,
+                      client.email,
+                      client.address,
+                      if (client.eventDate.isNotEmpty) 'Event: ${client.eventDate}',
+                      if (client.reference.isNotEmpty) 'Ref: ${client.reference}',
+                      'Priority: ${client.priority}',
+                    ],
                     icon: Icons.person_outline,
                     extraAction: client.fromLead ? const Padding(padding: EdgeInsets.only(top: 8), child: Chip(label: Text('From Lead', style: TextStyle(fontSize: 10)), visualDensity: VisualDensity.compact)) : null,
                     onView: () => onViewLedger(client),

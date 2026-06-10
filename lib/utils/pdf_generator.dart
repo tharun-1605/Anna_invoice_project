@@ -141,6 +141,8 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
                 if (invoice.discountAmount > 0)
                   _pdfTotal('Discount', '-${money.format(invoice.discountAmount)}'),
                 _pdfTotal('Total', money.format(invoice.total), strong: true),
+                _pdfTotal('Paid', money.format(invoice.paid)),
+                _pdfTotal('Amount Due', money.format(invoice.due), strong: true),
               ],
             ),
           ),
@@ -306,6 +308,8 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
                   if (invoice.discountAmount > 0)
                     _pdfTotal('Discount', '-${money.format(invoice.discountAmount)}'),
                   _pdfTotal('Total', money.format(invoice.total), strong: true),
+                  _pdfTotal('Paid', money.format(invoice.paid)),
+                  _pdfTotal('Amount Due', money.format(invoice.due), strong: true),
                 ],
               ),
             ),

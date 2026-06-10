@@ -29,6 +29,9 @@ class InvoiceComposer extends StatefulWidget {
     required this.studioItems,
     required this.onSaved,
     this.invoiceToEdit,
+    this.initialType = 'Tax Invoice',
+    this.initialClient,
+    this.invoices = const [],
   });
 
   final InvoiceStore store;
@@ -38,6 +41,9 @@ class InvoiceComposer extends StatefulWidget {
   final List<StudioItem> studioItems;
   final VoidCallback onSaved;
   final Invoice? invoiceToEdit;
+  final String initialType;
+  final Client? initialClient;
+  final List<Invoice> invoices;
 
   @override
   State<InvoiceComposer> createState() => _InvoiceComposerState();
@@ -45,7 +51,7 @@ class InvoiceComposer extends StatefulWidget {
 
 class _InvoiceComposerState extends State<InvoiceComposer> {
   final formKey = GlobalKey<FormState>();
-  final number = TextEditingController(text: '188');
+  final number = TextEditingController();
   final paid = TextEditingController(text: '0');
   final discountAmount = TextEditingController(text: '0');
   final notes = TextEditingController();
@@ -63,7 +69,12 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     super.initState();
     final invoice = widget.invoiceToEdit;
     if (invoice == null) {
-      _loadDraft();
+      invoiceType = widget.initialType;
+      client = widget.initialClient;
+      number.text = _generateNextNumber();
+      if (widget.initialClient == null) {
+        _loadDraft();
+      }
       return;
     }
 
@@ -86,6 +97,17 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
         )
         .toList();
     if (items.isEmpty) items = [_ItemDraft()];
+  }
+
+  String _generateNextNumber() {
+    int maxNum = 0;
+    for (final inv in widget.invoices) {
+      final num = int.tryParse(inv.number);
+      if (num != null && num > maxNum) {
+        maxNum = num;
+      }
+    }
+    return maxNum == 0 ? '1' : (maxNum + 1).toString();
   }
 
   Future<void> _loadDraft() async {
@@ -614,7 +636,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     );
 
     if (confirm == true && selectedItems.isNotEmpty) {
-      final names = selectedItems.map((e) => e.name).join(', ');
+      final names = selectedItems.map((e) => e.name).join('\n');
       final totalPrice = selectedItems.fold(0.0, (sum, e) => sum + e.price);
       
       setState(() {

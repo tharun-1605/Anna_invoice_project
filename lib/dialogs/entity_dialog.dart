@@ -11,12 +11,13 @@ import '../services/invoice_store.dart';
 import '../widgets/common_widgets.dart';
 
 class DialogField {
-  const DialogField(this.label, this.controller, {this.lines = 1, this.keyboardType});
+  const DialogField(this.label, this.controller, {this.lines = 1, this.keyboardType, this.choices});
 
   final String label;
   final TextEditingController controller;
   final int lines;
   final TextInputType? keyboardType;
+  final List<String>? choices;
 }
 
 Future<void> showCompanyDialog(
@@ -208,6 +209,9 @@ Future<void> showClientDialog(
   final phone = TextEditingController(text: client?.phone ?? '');
   final email = TextEditingController(text: client?.email ?? '');
   final address = TextEditingController(text: client?.address ?? '');
+  final eventDate = TextEditingController(text: client?.eventDate ?? '');
+  final priority = TextEditingController(text: client?.priority.isEmpty ?? true ? 'Medium' : client!.priority);
+  final reference = TextEditingController(text: client?.reference ?? '');
   await showEntityDialog(
     context: context,
     title: client == null ? 'Add client' : 'Edit client',
@@ -215,6 +219,9 @@ Future<void> showClientDialog(
       DialogField('Client name', name),
       DialogField('Phone (e.g. +91...)', phone, keyboardType: TextInputType.phone),
       DialogField('Email', email, keyboardType: TextInputType.emailAddress),
+      DialogField('Event Date (e.g., YYYY-MM-DD)', eventDate, keyboardType: TextInputType.datetime),
+      DialogField('Priority', priority, choices: ['High', 'Medium', 'Low']),
+      DialogField('Reference (e.g. Social Media, Friend)', reference),
       DialogField('Address', address, lines: 3),
     ],
     onSave: () => store.saveClient(
@@ -224,6 +231,9 @@ Future<void> showClientDialog(
         phone: phone.text.trim(),
         email: email.text.trim(),
         address: address.text.trim(),
+        eventDate: eventDate.text.trim(),
+        priority: priority.text.trim(),
+        reference: reference.text.trim(),
       ),
     ),
   );
@@ -238,6 +248,9 @@ Future<void> showLeadDialog(
   final phone = TextEditingController(text: lead?.phone ?? '');
   final email = TextEditingController(text: lead?.email ?? '');
   final address = TextEditingController(text: lead?.address ?? '');
+  final eventDate = TextEditingController(text: lead?.eventDate ?? '');
+  final priority = TextEditingController(text: lead?.priority.isEmpty ?? true ? 'Medium' : lead!.priority);
+  final reference = TextEditingController(text: lead?.reference ?? '');
   await showEntityDialog(
     context: context,
     title: lead == null ? 'Add lead' : 'Edit lead',
@@ -245,6 +258,9 @@ Future<void> showLeadDialog(
       DialogField('Lead name', name),
       DialogField('Phone (e.g. +91...)', phone, keyboardType: TextInputType.phone),
       DialogField('Email', email, keyboardType: TextInputType.emailAddress),
+      DialogField('Event Date (e.g., YYYY-MM-DD)', eventDate, keyboardType: TextInputType.datetime),
+      DialogField('Priority', priority, choices: ['High', 'Medium', 'Low']),
+      DialogField('Reference (e.g. Social Media, Friend)', reference),
       DialogField('Address', address, lines: 3),
     ],
     onSave: () => store.saveLead(
@@ -254,6 +270,9 @@ Future<void> showLeadDialog(
         phone: phone.text.trim(),
         email: email.text.trim(),
         address: address.text.trim(),
+        eventDate: eventDate.text.trim(),
+        priority: priority.text.trim(),
+        reference: reference.text.trim(),
       ),
     ),
   );
@@ -521,17 +540,33 @@ class _EntityDialogState extends State<_EntityDialog> {
                   .map(
                     (field) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: TextFormField(
-                        controller: field.controller,
-                        minLines: field.lines,
-                        maxLines: field.lines,
-                        keyboardType: field.keyboardType,
-                        decoration: InputDecoration(labelText: field.label),
-                        validator: field.label.contains('name') ||
-                                field.label.contains('Company')
-                            ? requiredField
-                            : null,
-                      ),
+                      child: field.choices != null
+                          ? DropdownButtonFormField<String>(
+                              value: field.controller.text.isEmpty ? field.choices!.first : field.controller.text,
+                              decoration: InputDecoration(labelText: field.label),
+                              items: field.choices!.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                if (newValue != null) {
+                                  field.controller.text = newValue;
+                                }
+                              },
+                            )
+                          : TextFormField(
+                              controller: field.controller,
+                              minLines: field.lines,
+                              maxLines: field.lines,
+                              keyboardType: field.keyboardType,
+                              decoration: InputDecoration(labelText: field.label),
+                              validator: field.label.contains('name') ||
+                                      field.label.contains('Company')
+                                  ? requiredField
+                                  : null,
+                            ),
                     ),
                   )
                   .toList(),
