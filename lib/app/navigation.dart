@@ -197,6 +197,13 @@ class _ChipNav extends StatelessWidget {
         label: Text(label),
         selected: view == target,
         onSelected: (_) => onViewChanged(target),
+        selectedColor: const Color(0xFF007AFF).withOpacity(0.9),
+        checkmarkColor: Colors.white,
+        labelStyle: TextStyle(
+          color: view == target ? Colors.white : const Color(0xFF111827),
+          fontWeight: view == target ? FontWeight.w700 : FontWeight.w500,
+        ),
+        side: BorderSide.none,
       ),
     );
   }

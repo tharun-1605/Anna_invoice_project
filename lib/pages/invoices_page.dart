@@ -235,6 +235,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           child: _FilterField(
                             'Month',
                             DropdownButtonFormField<String>(
+isExpanded: true,
 borderRadius: BorderRadius.circular(16),
 dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedMonth,
@@ -257,6 +258,7 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                           child: _FilterField(
                             'Year',
                             DropdownButtonFormField<String>(
+isExpanded: true,
 borderRadius: BorderRadius.circular(16),
 dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedYear,
@@ -306,6 +308,7 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                     _FilterField(
                       'Payment',
                       DropdownButtonFormField<String>(
+isExpanded: true,
 borderRadius: BorderRadius.circular(16),
 dropdownColor: Colors.white.withValues(alpha: 0.95),
                         initialValue: _selectedStatus,
@@ -344,6 +347,7 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                           child: _FilterField(
                             'Month',
                             DropdownButtonFormField<String>(
+isExpanded: true,
 borderRadius: BorderRadius.circular(16),
 dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedMonth,
@@ -366,6 +370,7 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                           child: _FilterField(
                             'Year',
                             DropdownButtonFormField<String>(
+isExpanded: true,
 borderRadius: BorderRadius.circular(16),
 dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedYear,
@@ -414,6 +419,7 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                           child: _FilterField(
                             'Payment',
                             DropdownButtonFormField<String>(
+isExpanded: true,
 borderRadius: BorderRadius.circular(16),
 dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedStatus,

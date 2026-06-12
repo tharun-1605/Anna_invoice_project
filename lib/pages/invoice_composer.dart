@@ -28,6 +28,7 @@ class InvoiceComposer extends StatefulWidget {
     required this.packages,
     required this.studioItems,
     required this.onSaved,
+    this.onCancel,
     this.invoiceToEdit,
     this.initialType = 'Tax Invoice',
     this.initialClient,
@@ -40,6 +41,7 @@ class InvoiceComposer extends StatefulWidget {
   final List<StudioPackage> packages;
   final List<StudioItem> studioItems;
   final VoidCallback onSaved;
+  final VoidCallback? onCancel;
   final Invoice? invoiceToEdit;
   final String initialType;
   final Client? initialClient;
@@ -206,15 +208,28 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
         PageHeader(
           title: isEditing ? 'Edit invoice' : 'Create invoice',
           subtitle: 'Build the invoice, save it to Firestore, then export PDF.',
-          action: FilledButton.icon(
-            onPressed: saving ? null : _save,
-            icon: saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.cloud_done_outlined),
-            label: Text(isEditing ? 'Update invoice' : 'Save invoice'),
+          action: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.end,
+            children: [
+              if (!isEditing)
+                OutlinedButton.icon(
+                  onPressed: saving ? null : _cancel,
+                  icon: const Icon(Icons.close),
+                  label: const Text('Cancel'),
+                ),
+              FilledButton.icon(
+                onPressed: saving ? null : _save,
+                icon: saving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.cloud_done_outlined),
+                label: Text(isEditing ? 'Update invoice' : 'Save invoice'),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 18),
@@ -266,6 +281,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
               child: WarningBox('Add at least one company and one client before saving.'),
             ),
           DropdownButtonFormField<String>(
+isExpanded: true,
 borderRadius: BorderRadius.circular(16),
 dropdownColor: Colors.white.withValues(alpha: 0.95),
             initialValue: invoiceType,
@@ -553,6 +569,16 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
       type: invoiceType,
       payments: draftPayments,
     );
+  }
+
+  Future<void> _cancel() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('draft_invoice_state');
+    if (widget.onCancel != null) {
+      widget.onCancel!();
+    } else {
+      widget.onSaved();
+    }
   }
 
   Future<void> _save() async {
