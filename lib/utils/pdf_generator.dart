@@ -11,13 +11,27 @@ import 'formatters.dart';
 
 const logoPath = 'assets/images/za_logo.png';
 
-Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
-  final logoBytes = await rootBundle.load(logoPath);
-  final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
-  final doc = pw.Document();
+pw.MemoryImage? _cachedLogo;
+pw.Font? _cachedFont;
+pw.Font? _cachedBoldFont;
 
-  final font = await PdfGoogleFonts.robotoRegular();
-  final boldFont = await PdfGoogleFonts.robotoBold();
+Future<void> _loadPdfAssets() async {
+  if (_cachedLogo == null) {
+    final logoBytes = await rootBundle.load(logoPath);
+    _cachedLogo = pw.MemoryImage(logoBytes.buffer.asUint8List());
+  }
+  _cachedFont ??= await PdfGoogleFonts.robotoRegular();
+  _cachedBoldFont ??= await PdfGoogleFonts.robotoBold();
+}
+
+Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
+  await _loadPdfAssets();
+  
+  final logo = _cachedLogo!;
+  final font = _cachedFont!;
+  final boldFont = _cachedBoldFont!;
+  
+  final doc = pw.Document();
 
   doc.addPage(
     pw.MultiPage(
@@ -187,12 +201,13 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
 }
 
 Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
-  final logoBytes = await rootBundle.load(logoPath);
-  final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
+  await _loadPdfAssets();
+  
+  final logo = _cachedLogo!;
+  final font = _cachedFont!;
+  final boldFont = _cachedBoldFont!;
+  
   final doc = pw.Document();
-
-  final font = await PdfGoogleFonts.robotoRegular();
-  final boldFont = await PdfGoogleFonts.robotoBold();
 
   for (final invoice in invoices) {
     doc.addPage(
@@ -436,8 +451,8 @@ Future<Uint8List> buildLedgerPdf(
   double paid,
   double due,
 ) async {
-  final logoBytes = await rootBundle.load(logoPath);
-  final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
+  await _loadPdfAssets();
+  final logo = _cachedLogo!;
   final doc = pw.Document();
 
   doc.addPage(
