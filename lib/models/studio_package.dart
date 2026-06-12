@@ -7,6 +7,7 @@ class StudioPackage {
     required this.description,
     required this.price,
     this.items = const [],
+    this.deliverables = const [],
   });
 
   final String id;
@@ -14,6 +15,7 @@ class StudioPackage {
   final String description;
   final double price;
   final List<String> items;
+  final List<String> deliverables;
 
   factory StudioPackage.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -23,6 +25,7 @@ class StudioPackage {
       description: data['description'] ?? '',
       price: (data['price'] ?? 0).toDouble(),
       items: List<String>.from(data['items'] ?? []),
+      deliverables: List<String>.from(data['deliverables'] ?? []),
     );
   }
 
@@ -31,6 +34,7 @@ class StudioPackage {
     'description': description,
     'price': price,
     'items': items,
+    'deliverables': deliverables,
     'updatedAt': FieldValue.serverTimestamp(),
   };
 

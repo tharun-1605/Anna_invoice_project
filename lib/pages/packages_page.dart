@@ -52,6 +52,7 @@ class PackagesPage extends StatelessWidget {
                       pkg.description, 
                       'Price: ${money.format(pkg.price)}',
                       if (pkg.items.isNotEmpty) 'Items: ${pkg.items.join(', ')}',
+                      if (pkg.deliverables.isNotEmpty) 'Deliverables: ${pkg.deliverables.join(', ')}',
                     ],
                     icon: Icons.inventory_2_outlined,
                     onEdit: () => showPackageDialog(context, store, pkg),

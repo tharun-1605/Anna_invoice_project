@@ -29,11 +29,12 @@ service cloud.firestore {
     }
 
     function isPackage(data) {
-      return hasOnly(data, ['name', 'description', 'price', 'items', 'updatedAt'])
+      return (hasOnly(data, ['name', 'description', 'price', 'items', 'updatedAt']) || hasOnly(data, ['name', 'description', 'price', 'items', 'deliverables', 'updatedAt']))
         && isString(data.name)
         && isString(data.description)
         && isNumber(data.price)
         && data.items is list
+        && (data.deliverables is list || !data.keys().hasAny(['deliverables']))
         && isTimestamp(data.updatedAt);
     }
 

@@ -424,6 +424,9 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                       else
                         pkg.name,
                       ...pkg.items,
+                      if (pkg.deliverables.isNotEmpty) '',
+                      if (pkg.deliverables.isNotEmpty) 'Deliverables:',
+                      ...pkg.deliverables.map((item) => '- $item'),
                     ];
                     
                     setState(() {

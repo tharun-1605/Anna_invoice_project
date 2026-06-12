@@ -113,12 +113,21 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
                         ),
                         if (lines.length > 1) pw.SizedBox(height: 3),
                         if (lines.length > 1)
-                          ...lines.skip(1).map(
-                                (line) => pw.Text(
+                          ...lines.skip(1).map((line) {
+                            if (line == 'Deliverables:') {
+                              return pw.Padding(
+                                padding: const pw.EdgeInsets.only(top: 4, bottom: 2),
+                                child: pw.Text(
                                   line,
-                                  style: const pw.TextStyle(fontSize: 10),
+                                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
                                 ),
-                              ),
+                              );
+                            }
+                            return pw.Text(
+                              line,
+                              style: const pw.TextStyle(fontSize: 10),
+                            );
+                          }),
                       ],
                     ),
                   ),
@@ -280,12 +289,21 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
                           ),
                           if (lines.length > 1) pw.SizedBox(height: 3),
                           if (lines.length > 1)
-                            ...lines.skip(1).map(
-                                  (line) => pw.Text(
+                            ...lines.skip(1).map((line) {
+                              if (line == 'Deliverables:') {
+                                return pw.Padding(
+                                  padding: const pw.EdgeInsets.only(top: 4, bottom: 2),
+                                  child: pw.Text(
                                     line,
-                                    style: const pw.TextStyle(fontSize: 10),
+                                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
                                   ),
-                                ),
+                                );
+                              }
+                              return pw.Text(
+                                line,
+                                style: const pw.TextStyle(fontSize: 10),
+                              );
+                            }),
                         ],
                       ),
                     ),

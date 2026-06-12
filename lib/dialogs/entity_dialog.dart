@@ -334,6 +334,7 @@ class _PackageDialogState extends State<_PackageDialog> {
   late final TextEditingController descCtrl;
   late final TextEditingController priceCtrl;
   final List<TextEditingController> itemCtrls = [];
+  final List<TextEditingController> delivCtrls = [];
   bool saving = false;
 
   @override
@@ -350,6 +351,14 @@ class _PackageDialogState extends State<_PackageDialog> {
     } else {
       itemCtrls.add(TextEditingController());
     }
+    
+    if (widget.package != null && widget.package!.deliverables.isNotEmpty) {
+      for (final item in widget.package!.deliverables) {
+        delivCtrls.add(TextEditingController(text: item));
+      }
+    } else {
+      delivCtrls.add(TextEditingController());
+    }
   }
 
   @override
@@ -358,6 +367,9 @@ class _PackageDialogState extends State<_PackageDialog> {
     descCtrl.dispose();
     priceCtrl.dispose();
     for (final ctrl in itemCtrls) {
+      ctrl.dispose();
+    }
+    for (final ctrl in delivCtrls) {
       ctrl.dispose();
     }
     super.dispose();
@@ -438,6 +450,50 @@ class _PackageDialogState extends State<_PackageDialog> {
                     ),
                   );
                 }),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Deliverables', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          delivCtrls.add(TextEditingController());
+                        });
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Deliverable'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...delivCtrls.indexed.map((entry) {
+                  final index = entry.$1;
+                  final ctrl = entry.$2;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: ctrl,
+                            decoration: InputDecoration(labelText: 'Deliverable ${index + 1}'),
+                            validator: requiredField,
+                          ),
+                        ),
+                        if (delivCtrls.length > 1)
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                delivCtrls.removeAt(index).dispose();
+                              });
+                            },
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
               ],
             ),
           ),
@@ -462,6 +518,10 @@ class _PackageDialogState extends State<_PackageDialog> {
                         description: descCtrl.text.trim(),
                         price: double.tryParse(priceCtrl.text) ?? 0,
                         items: itemCtrls
+                            .map((c) => c.text.trim())
+                            .where((text) => text.isNotEmpty)
+                            .toList(),
+                        deliverables: delivCtrls
                             .map((c) => c.text.trim())
                             .where((text) => text.isNotEmpty)
                             .toList(),
