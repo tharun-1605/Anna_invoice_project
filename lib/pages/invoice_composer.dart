@@ -266,6 +266,8 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
               child: WarningBox('Add at least one company and one client before saving.'),
             ),
           DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
             initialValue: invoiceType,
             items: ['Tax Invoice', 'Quote', 'Proforma']
                 .map((type) => DropdownMenuItem(value: type, child: Text(type)))
@@ -277,28 +279,50 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
             decoration: const InputDecoration(labelText: 'Document Type'),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<Company>(
-            initialValue: company,
-            items: widget.companies
-                .map((item) => DropdownMenuItem(value: item, child: Text(item.name)))
-                .toList(),
-            onChanged: (value) {
-              setState(() => company = value);
-              _onChanged();
-            },
-            decoration: const InputDecoration(labelText: 'Company'),
+          LayoutBuilder(
+            builder: (context, constraints) => DropdownMenu<Company>(
+              initialSelection: company,
+              width: constraints.maxWidth,
+              enableFilter: true,
+              enableSearch: true,
+              label: const Text('Company'),
+              menuStyle: MenuStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.white.withValues(alpha: 0.95)),
+                shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              ),
+              dropdownMenuEntries: widget.companies
+                  .map((item) => DropdownMenuEntry(value: item, label: item.name))
+                  .toList(),
+              onSelected: (value) {
+                if (value != null) {
+                  setState(() => company = value);
+                  _onChanged();
+                }
+              },
+            ),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<Client>(
-            initialValue: client,
-            items: widget.clients
-                .map((item) => DropdownMenuItem(value: item, child: Text(item.name)))
-                .toList(),
-            onChanged: (value) {
-              setState(() => client = value);
-              _onChanged();
-            },
-            decoration: const InputDecoration(labelText: 'Client'),
+          LayoutBuilder(
+            builder: (context, constraints) => DropdownMenu<Client>(
+              initialSelection: client,
+              width: constraints.maxWidth,
+              enableFilter: true,
+              enableSearch: true,
+              label: const Text('Client'),
+              menuStyle: MenuStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.white.withValues(alpha: 0.95)),
+                shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              ),
+              dropdownMenuEntries: widget.clients
+                  .map((item) => DropdownMenuEntry(value: item, label: item.name))
+                  .toList(),
+              onSelected: (value) {
+                if (value != null) {
+                  setState(() => client = value);
+                  _onChanged();
+                }
+              },
+            ),
           ),
           const SizedBox(height: 12),
           Row(

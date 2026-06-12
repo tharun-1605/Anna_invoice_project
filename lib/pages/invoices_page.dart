@@ -235,6 +235,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           child: _FilterField(
                             'Month',
                             DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedMonth,
                               decoration: const InputDecoration(isDense: true),
                               items: _months
@@ -255,6 +257,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           child: _FilterField(
                             'Year',
                             DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedYear,
                               decoration: const InputDecoration(isDense: true),
                               items: years
@@ -302,6 +306,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
                     _FilterField(
                       'Payment',
                       DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
                         initialValue: _selectedStatus,
                         decoration: const InputDecoration(isDense: true),
                         items: ['All', 'Paid', 'Partially Paid', 'Unpaid']
@@ -338,6 +344,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           child: _FilterField(
                             'Month',
                             DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedMonth,
                               decoration: const InputDecoration(isDense: true),
                               items: _months
@@ -358,6 +366,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           child: _FilterField(
                             'Year',
                             DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedYear,
                               decoration: const InputDecoration(isDense: true),
                               items: years
@@ -404,6 +414,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
                           child: _FilterField(
                             'Payment',
                             DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
                               initialValue: _selectedStatus,
                               decoration: const InputDecoration(isDense: true),
                               items: ['All', 'Paid', 'Partially Paid', 'Unpaid']
@@ -1457,6 +1469,8 @@ class _ManagePaymentsDialogState extends State<ManagePaymentsDialog> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
+borderRadius: BorderRadius.circular(16),
+dropdownColor: Colors.white.withValues(alpha: 0.95),
                         isExpanded: true,
                         initialValue: payments[i].method,
                         decoration: const InputDecoration(

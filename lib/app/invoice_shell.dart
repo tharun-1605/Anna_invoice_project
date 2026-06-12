@@ -137,8 +137,27 @@ class _InvoiceShellState extends State<InvoiceShell> {
                         }
                       },
                       child: Scaffold(
-                        body: SafeArea(
-                        child: LayoutBuilder(
+                        backgroundColor: Colors.transparent,
+                        extendBodyBehindAppBar: true,
+                        body: Stack(
+                          children: [
+                            Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFFE0EAFC),
+                                    Color(0xFFCFDEF3),
+                                    Color(0xFFFDEBEE),
+                                    Color(0xFFE8F5E9),
+                                  ],
+                                  stops: [0.0, 0.4, 0.7, 1.0],
+                                ),
+                              ),
+                            ),
+                            SafeArea(
+                              child: LayoutBuilder(
                           builder: (context, constraints) {
                             final wide = constraints.maxWidth >= 900;
                             final content = AppContent(
@@ -187,9 +206,11 @@ class _InvoiceShellState extends State<InvoiceShell> {
                           },
                         ),
                       ),
-                    ),
-                  );
-                      },
+                    ],
+                  ),
+                ),
+              );
+            },
                     );
                   },
                 );

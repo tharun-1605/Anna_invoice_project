@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/glass_container.dart';
+
 import '../utils/pdf_generator.dart';
 import 'app_view.dart';
 
@@ -12,10 +14,12 @@ class SideNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
       width: 260,
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      borderRadius: BorderRadius.zero,
+      color: Colors.white.withOpacity(0.4),
+      border: const Border(right: BorderSide(color: Colors.white, width: 1.5)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -120,8 +124,10 @@ class MobileBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
+    return GlassContainer(
+      borderRadius: BorderRadius.zero,
+      color: Colors.white.withOpacity(0.4),
+      border: const Border(bottom: BorderSide(color: Colors.white, width: 1.5)),
       child: Column(
         children: [
           Padding(
@@ -220,17 +226,18 @@ class _NavButton extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            color: active ? const Color(0xFF111827) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: active ? Colors.white.withOpacity(0.6) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: active ? Border.all(color: Colors.white, width: 1) : null,
           ),
           child: Row(
             children: [
-              Icon(icon, color: active ? Colors.white : const Color(0xFF4B5563)),
+              Icon(icon, color: active ? const Color(0xFF007AFF) : const Color(0xFF4B5563)),
               const SizedBox(width: 12),
               Text(
                 label,
                 style: TextStyle(
-                  color: active ? Colors.white : const Color(0xFF111827),
+                  color: active ? const Color(0xFF007AFF) : const Color(0xFF111827),
                   fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),

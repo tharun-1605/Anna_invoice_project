@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'glass_container.dart';
+
 class PageHeader extends StatelessWidget {
   const PageHeader({super.key, required this.title, required this.subtitle, this.action});
 
@@ -98,8 +100,9 @@ class MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = color ?? const Color(0xFF2563EB);
-    return Card(
-      color: Colors.white,
+    return GlassContainer(
+      applyBlur: false,
+      color: Colors.white.withOpacity(0.5),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Row(
@@ -147,8 +150,9 @@ class Panel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
+    return GlassContainer(
+      applyBlur: false,
+      color: Colors.white.withOpacity(0.5),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -197,8 +201,9 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
+    return GlassContainer(
+      applyBlur: false,
+      color: Colors.white.withOpacity(0.5),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -255,14 +260,12 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassContainer(
+      applyBlur: false,
       width: double.infinity,
       padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
+      color: Colors.white.withOpacity(0.3),
+      border: Border.all(color: Colors.white.withOpacity(0.4)),
       child: Center(
         child: Text(text, style: const TextStyle(color: Color(0xFF6B7280))),
       ),
