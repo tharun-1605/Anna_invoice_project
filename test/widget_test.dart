@@ -41,4 +41,42 @@ void main() {
     expect(invoice.total, 215000);
     expect(invoice.due, 165000);
   });
+
+  test('invoice serialization handles shoot details correctly', () {
+    final invoice = Invoice(
+      id: 'demo_shoot',
+      number: 'Q-2026',
+      company: Company(
+        id: 'company',
+        name: 'ZA Pictures',
+        address: 'Coimbatore',
+        phone: '9003961109',
+        email: 'hello@zapictures.in',
+      ),
+      client: Client(
+        id: 'client',
+        name: 'Pavithra',
+        phone: '90035 87494',
+        email: '',
+        address: '',
+      ),
+      date: DateTime(2026, 6, 2),
+      dueDate: DateTime(2026, 6, 9),
+      items: [
+        InvoiceItem(description: 'Wedding', quantity: 1, price: 130000),
+      ],
+      paid: 0,
+      notes: '',
+      createdAt: DateTime(2026, 6, 2),
+      payments: [],
+      shootType: 'Wedding',
+      shootVenue: 'Rosewood Gardens',
+      shootDate: DateTime(2026, 6, 12),
+    );
+
+    final json = invoice.toJson();
+    expect(json['shootType'], 'Wedding');
+    expect(json['shootVenue'], 'Rosewood Gardens');
+    expect(json['shootDate'], isNotNull);
+  });
 }

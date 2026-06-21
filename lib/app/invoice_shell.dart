@@ -28,12 +28,25 @@ class _InvoiceShellState extends State<InvoiceShell> {
   Client? ledgerClient;
   String initialInvoiceType = 'Tax Invoice';
   Client? initialComposerClient;
+  bool isPublicPortal = false;
 
   @override
   void initState() {
     super.initState();
     store = InvoiceStore(FirebaseFirestore.instance);
     DownloadHelper.requestStoragePermissionOnStartup();
+
+    final uri = Uri.base;
+    final hasBookingQuery = uri.fragment.contains('booking') || 
+                            uri.path.contains('booking') || 
+                            uri.queryParameters.containsKey('booking') ||
+                            uri.fragment.contains('portal') ||
+                            uri.path.contains('portal') ||
+                            uri.queryParameters.containsKey('portal');
+    if (hasBookingQuery) {
+      view = AppView.bookingPortal;
+      isPublicPortal = true;
+    }
   }
 
   void _changeView(AppView next) {
@@ -178,6 +191,7 @@ class _InvoiceShellState extends State<InvoiceShell> {
                               ledgerClient: ledgerClient,
                               initialInvoiceType: initialInvoiceType,
                               initialComposerClient: initialComposerClient,
+                              isPublicPortal: isPublicPortal,
                             );
 
                             final now = DateTime.now();
@@ -187,6 +201,10 @@ class _InvoiceShellState extends State<InvoiceShell> {
                                      now.isAfter(inv.dueDate) && 
                                      !inv.isReminderDismissed;
                             }).length;
+
+                            if (isPublicPortal) {
+                              return content;
+                            }
 
                             if (!wide) {
                               return Column(

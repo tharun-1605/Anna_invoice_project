@@ -26,22 +26,19 @@ Future<void> _loadPdfAssets() async {
 
 Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
   await _loadPdfAssets();
-  
+
   final logo = _cachedLogo!;
   final font = _cachedFont!;
   final boldFont = _cachedBoldFont!;
-  
-  final doc = pw.Document();
+
+  final doc = pw.Document(compress: false);
 
   doc.addPage(
     pw.MultiPage(
       pageTheme: pw.PageTheme(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(36),
-        theme: pw.ThemeData.withFont(
-          base: font,
-          bold: boldFont,
-        ),
+        theme: pw.ThemeData.withFont(base: font, bold: boldFont),
       ),
       build: (context) => [
         pw.Row(
@@ -81,6 +78,12 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
                   _pdfFact('${invoice.type} #', invoice.number),
                   _pdfFact('Date', dateFormatter.format(invoice.date)),
                   _pdfFact('Due date', dateFormatter.format(invoice.dueDate)),
+                  if (invoice.shootDate != null)
+                    _pdfFact('Shoot Date', dateFormatter.format(invoice.shootDate!)),
+                  if (invoice.shootVenue != null && invoice.shootVenue!.isNotEmpty)
+                    _pdfFact('Shoot Venue', invoice.shootVenue!),
+                  if (invoice.shootType != null && invoice.shootType!.isNotEmpty)
+                    _pdfFact('Shoot Type', invoice.shootType!),
                 ],
               ),
             ),
@@ -90,7 +93,10 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
         pw.Table(
           border: const pw.TableBorder(
             bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
-            horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+            horizontalInside: pw.BorderSide(
+              color: PdfColors.grey300,
+              width: 0.5,
+            ),
             left: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
             right: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
             top: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
@@ -123,17 +129,26 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
                       children: [
                         pw.Text(
                           lines.first,
-                          style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
                         ),
                         if (lines.length > 1) pw.SizedBox(height: 3),
                         if (lines.length > 1)
                           ...lines.skip(1).map((line) {
                             if (line == 'Deliverables:') {
                               return pw.Padding(
-                                padding: const pw.EdgeInsets.only(top: 4, bottom: 2),
+                                padding: const pw.EdgeInsets.only(
+                                  top: 4,
+                                  bottom: 2,
+                                ),
                                 child: pw.Text(
                                   line,
-                                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                                  style: pw.TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: pw.FontWeight.bold,
+                                  ),
                                 ),
                               );
                             }
@@ -162,10 +177,17 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
               children: [
                 _pdfTotal('Subtotal', money.format(invoice.subtotal)),
                 if (invoice.discountAmount > 0)
-                  _pdfTotal('Discount', '-${money.format(invoice.discountAmount)}'),
+                  _pdfTotal(
+                    'Discount',
+                    '-${money.format(invoice.discountAmount)}',
+                  ),
                 _pdfTotal('Total', money.format(invoice.total), strong: true),
                 _pdfTotal('Paid', money.format(invoice.paid)),
-                _pdfTotal('Amount Due', money.format(invoice.due), strong: true),
+                _pdfTotal(
+                  'Amount Due',
+                  money.format(invoice.due),
+                  strong: true,
+                ),
               ],
             ),
           ),
@@ -188,7 +210,13 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
                   fit: pw.BoxFit.contain,
                 ),
                 pw.SizedBox(height: 4),
-                pw.Text('Authorized Signatory', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                pw.Text(
+                  'Authorized Signatory',
+                  style: const pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColors.grey700,
+                  ),
+                ),
               ],
             ),
           ),
@@ -202,12 +230,12 @@ Future<Uint8List> buildInvoicePdf(Invoice invoice) async {
 
 Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
   await _loadPdfAssets();
-  
+
   final logo = _cachedLogo!;
   final font = _cachedFont!;
   final boldFont = _cachedBoldFont!;
-  
-  final doc = pw.Document();
+
+  final doc = pw.Document(compress: false);
 
   for (final invoice in invoices) {
     doc.addPage(
@@ -215,10 +243,7 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
         pageTheme: pw.PageTheme(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(36),
-          theme: pw.ThemeData.withFont(
-            base: font,
-            bold: boldFont,
-          ),
+          theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         ),
         build: (context) => [
           pw.Row(
@@ -228,7 +253,10 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
               pw.Spacer(),
               pw.Text(
                 invoice.type.toUpperCase(),
-                style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold),
+                style: pw.TextStyle(
+                  fontSize: 28,
+                  fontWeight: pw.FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -258,6 +286,12 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
                     _pdfFact('${invoice.type} #', invoice.number),
                     _pdfFact('Date', dateFormatter.format(invoice.date)),
                     _pdfFact('Due date', dateFormatter.format(invoice.dueDate)),
+                    if (invoice.shootDate != null)
+                      _pdfFact('Shoot Date', dateFormatter.format(invoice.shootDate!)),
+                    if (invoice.shootVenue != null && invoice.shootVenue!.isNotEmpty)
+                      _pdfFact('Shoot Venue', invoice.shootVenue!),
+                    if (invoice.shootType != null && invoice.shootType!.isNotEmpty)
+                      _pdfFact('Shoot Type', invoice.shootType!),
                   ],
                 ),
               ),
@@ -267,11 +301,17 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
           pw.Table(
             border: const pw.TableBorder(
               bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
-              horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+              horizontalInside: pw.BorderSide(
+                color: PdfColors.grey300,
+                width: 0.5,
+              ),
               left: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
               right: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
               top: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
-              verticalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+              verticalInside: pw.BorderSide(
+                color: PdfColors.grey300,
+                width: 0.5,
+              ),
             ),
             columnWidths: {
               0: const pw.FlexColumnWidth(5),
@@ -300,17 +340,26 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
                         children: [
                           pw.Text(
                             lines.first,
-                            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
                           ),
                           if (lines.length > 1) pw.SizedBox(height: 3),
                           if (lines.length > 1)
                             ...lines.skip(1).map((line) {
                               if (line == 'Deliverables:') {
                                 return pw.Padding(
-                                  padding: const pw.EdgeInsets.only(top: 4, bottom: 2),
+                                  padding: const pw.EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 2,
+                                  ),
                                   child: pw.Text(
                                     line,
-                                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                                    style: pw.TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: pw.FontWeight.bold,
+                                    ),
                                   ),
                                 );
                               }
@@ -339,10 +388,17 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
                 children: [
                   _pdfTotal('Subtotal', money.format(invoice.subtotal)),
                   if (invoice.discountAmount > 0)
-                    _pdfTotal('Discount', '-${money.format(invoice.discountAmount)}'),
+                    _pdfTotal(
+                      'Discount',
+                      '-${money.format(invoice.discountAmount)}',
+                    ),
                   _pdfTotal('Total', money.format(invoice.total), strong: true),
                   _pdfTotal('Paid', money.format(invoice.paid)),
-                  _pdfTotal('Amount Due', money.format(invoice.due), strong: true),
+                  _pdfTotal(
+                    'Amount Due',
+                    money.format(invoice.due),
+                    strong: true,
+                  ),
                 ],
               ),
             ),
@@ -359,13 +415,21 @@ Future<Uint8List> buildCombinedInvoicePdf(List<Invoice> invoices) async {
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Image(
-                    pw.MemoryImage(base64Decode(invoice.company.signatureBase64)),
+                    pw.MemoryImage(
+                      base64Decode(invoice.company.signatureBase64),
+                    ),
                     width: 100,
                     height: 50,
                     fit: pw.BoxFit.contain,
                   ),
                   pw.SizedBox(height: 4),
-                  pw.Text('Authorized Signatory', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                  pw.Text(
+                    'Authorized Signatory',
+                    style: const pw.TextStyle(
+                      fontSize: 10,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -437,10 +501,7 @@ pw.Widget _pdfHeader(String text) {
 pw.Widget _pdfCell(String text) {
   return pw.Padding(
     padding: const pw.EdgeInsets.all(5),
-    child: pw.Text(
-      text,
-      style: const pw.TextStyle(fontSize: 10),
-    ),
+    child: pw.Text(text, style: const pw.TextStyle(fontSize: 10)),
   );
 }
 
@@ -453,7 +514,7 @@ Future<Uint8List> buildLedgerPdf(
 ) async {
   await _loadPdfAssets();
   final logo = _cachedLogo!;
-  final doc = pw.Document();
+  final doc = pw.Document(compress: false);
 
   doc.addPage(
     pw.MultiPage(
@@ -489,7 +550,10 @@ Future<Uint8List> buildLedgerPdf(
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  _pdfFact('Date Generated', dateFormatter.format(DateTime.now())),
+                  _pdfFact(
+                    'Date Generated',
+                    dateFormatter.format(DateTime.now()),
+                  ),
                 ],
               ),
             ),
@@ -508,7 +572,10 @@ Future<Uint8List> buildLedgerPdf(
         pw.Table(
           border: const pw.TableBorder(
             bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
-            horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+            horizontalInside: pw.BorderSide(
+              color: PdfColors.grey300,
+              width: 0.5,
+            ),
             left: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
             right: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
             top: pw.BorderSide(color: PdfColors.grey300, width: 0.5),

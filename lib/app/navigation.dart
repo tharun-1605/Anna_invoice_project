@@ -43,6 +43,12 @@ class SideNav extends StatelessWidget {
                     onTap: () => onViewChanged(AppView.dashboard),
                   ),
                   _NavButton(
+                    icon: Icons.storefront_outlined,
+                    label: 'Booking Portal',
+                    active: view == AppView.bookingPortal,
+                    onTap: () => onViewChanged(AppView.bookingPortal),
+                  ),
+                  _NavButton(
                     icon: Icons.business_outlined,
                     label: 'Companies',
                     active: view == AppView.companies,
@@ -164,6 +170,7 @@ class MobileBar extends StatelessWidget {
             child: Row(
               children: [
                 _ChipNav('Dashboard', AppView.dashboard, view, onViewChanged),
+                _ChipNav('Booking Portal', AppView.bookingPortal, view, onViewChanged),
                 _ChipNav('Companies', AppView.companies, view, onViewChanged),
                 _ChipNav('Leads', AppView.leads, view, onViewChanged),
                 _ChipNav('Clients', AppView.clients, view, onViewChanged),

@@ -20,6 +20,9 @@ class Invoice {
     this.discountAmount = 0.0,
     this.type = 'Tax Invoice',
     this.isReminderDismissed = false,
+    this.shootDate,
+    this.shootVenue,
+    this.shootType,
   });
 
   final String id;
@@ -36,6 +39,9 @@ class Invoice {
   final String type;
   final List<Payment> payments;
   final bool isReminderDismissed;
+  final DateTime? shootDate;
+  final String? shootVenue;
+  final String? shootType;
 
   double get subtotal => items.fold(0, (total, item) => total + item.amount);
   double get total => subtotal - discountAmount;
@@ -92,6 +98,9 @@ class Invoice {
       type: data['type'] ?? 'Tax Invoice',
       payments: parsedPayments,
       isReminderDismissed: data['isReminderDismissed'] ?? false,
+      shootDate: data['shootDate'] != null ? _toDate(data['shootDate']) : null,
+      shootVenue: data['shootVenue'],
+      shootType: data['shootType'],
     );
   }
 
@@ -131,5 +140,8 @@ class Invoice {
     'type': type,
     'payments': payments.map((p) => p.toJson()).toList(),
     'isReminderDismissed': isReminderDismissed,
+    'shootDate': shootDate != null ? Timestamp.fromDate(shootDate!) : null,
+    'shootVenue': shootVenue,
+    'shootType': shootType,
   };
 }

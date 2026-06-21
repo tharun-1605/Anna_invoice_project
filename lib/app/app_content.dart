@@ -6,6 +6,7 @@ import '../models/invoice.dart';
 import '../models/lead.dart';
 import '../models/studio_item.dart';
 import '../models/studio_package.dart';
+import '../pages/client_booking_page.dart';
 import '../pages/client_ledger_page.dart';
 import '../pages/clients_page.dart';
 import '../pages/companies_page.dart';
@@ -39,6 +40,7 @@ class AppContent extends StatelessWidget {
     this.ledgerClient,
     this.initialInvoiceType = 'Tax Invoice',
     this.initialComposerClient,
+    this.isPublicPortal = false,
   });
 
   final AppView view;
@@ -58,70 +60,88 @@ class AppContent extends StatelessWidget {
   final Client? ledgerClient;
   final String initialInvoiceType;
   final Client? initialComposerClient;
+  final bool isPublicPortal;
 
   @override
   Widget build(BuildContext context) {
-    final page = switch (view) {
-      AppView.dashboard => DashboardPage(
-          invoices: invoices,
-          companies: companies,
-          clients: clients,
-          packages: packages,
-          loading: loading,
-          onCreate: () => onViewChanged(AppView.create),
-        ),
-      AppView.companies => CompaniesPage(store: store, companies: companies),
-      AppView.leads => LeadsPage(
-          store: store,
-          leads: leads,
-          onCreateQuote: onCreateQuote,
-        ),
-      AppView.clients => ClientsPage(
-          store: store,
-          clients: clients,
-          onViewLedger: onViewLedger,
-        ),
-      AppView.clientLedger => ClientLedgerPage(
-              clients: clients,
-              invoices: invoices,
-              initialClient: ledgerClient,
-            ),
-      AppView.salesReport => SalesPage(invoices: invoices),
-      AppView.invoices => InvoicesPage(
-          invoices: invoices,
-          store: store,
-          onEdit: onEditInvoice,
-        ),
-      AppView.reminders => RemindersPage(
-          invoices: invoices,
-          store: store,
-        ),
-      AppView.packages => PackagesPage(store: store, packages: packages, studioItems: studioItems),
-      AppView.create => InvoiceComposer(
-          store: store,
-          companies: companies,
-          clients: [
-            ...clients,
-            if (initialComposerClient != null && !clients.any((c) => c.id == initialComposerClient!.id))
-              initialComposerClient!,
-            ...leads.map((l) => Client(
-              id: 'lead_${l.id}',
-              name: '${l.name} (Lead)',
-              phone: l.phone,
-              email: l.email,
-              address: l.address,
-              fromLead: true,
-            )).where((lc) => !clients.any((c) => c.id == lc.id) && initialComposerClient?.id != lc.id),
-          ],
-          packages: packages,
-          invoices: invoices,
-          studioItems: studioItems,
-          onSaved: () => onViewChanged(AppView.invoices),
-          invoiceToEdit: invoiceToEdit,
-          initialType: initialInvoiceType,
-          initialClient: initialComposerClient,
-        ),
-    };
+    final page = isPublicPortal
+        ? ClientBookingPage(
+            store: store,
+            companies: companies,
+            packages: packages,
+            studioItems: studioItems,
+            isPublicPortal: true,
+            invoices: invoices,
+          )
+        : switch (view) {
+            AppView.dashboard => DashboardPage(
+                invoices: invoices,
+                companies: companies,
+                clients: clients,
+                packages: packages,
+                loading: loading,
+                onCreate: () => onViewChanged(AppView.create),
+              ),
+            AppView.companies => CompaniesPage(store: store, companies: companies),
+            AppView.leads => LeadsPage(
+                store: store,
+                leads: leads,
+                onCreateQuote: onCreateQuote,
+              ),
+            AppView.clients => ClientsPage(
+                store: store,
+                clients: clients,
+                onViewLedger: onViewLedger,
+              ),
+            AppView.clientLedger => ClientLedgerPage(
+                clients: clients,
+                invoices: invoices,
+                initialClient: ledgerClient,
+              ),
+            AppView.salesReport => SalesPage(invoices: invoices),
+            AppView.invoices => InvoicesPage(
+                invoices: invoices,
+                store: store,
+                onEdit: onEditInvoice,
+              ),
+            AppView.reminders => RemindersPage(
+                invoices: invoices,
+                store: store,
+              ),
+            AppView.bookingPortal => ClientBookingPage(
+                store: store,
+                companies: companies,
+                packages: packages,
+                studioItems: studioItems,
+                isPublicPortal: isPublicPortal,
+                invoices: invoices,
+              ),
+            AppView.packages => PackagesPage(store: store, packages: packages, studioItems: studioItems),
+            AppView.create => InvoiceComposer(
+                store: store,
+                companies: companies,
+                clients: [
+                  ...clients,
+                  if (initialComposerClient != null && !clients.any((c) => c.id == initialComposerClient!.id))
+                    initialComposerClient!,
+                  ...leads.map((l) => Client(
+                    id: 'lead_${l.id}',
+                    name: '${l.name} (Lead)',
+                    phone: l.phone,
+                    email: l.email,
+                    address: l.address,
+                    fromLead: true,
+                  )).where((lc) => !clients.any((c) => c.id == lc.id) && initialComposerClient?.id != lc.id),
+                ],
+                packages: packages,
+                invoices: invoices,
+                studioItems: studioItems,
+                onSaved: () => onViewChanged(AppView.invoices),
+                invoiceToEdit: invoiceToEdit,
+                initialType: initialInvoiceType,
+                initialClient: initialComposerClient,
+              ),
+          };
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 240),

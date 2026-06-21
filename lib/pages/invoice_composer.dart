@@ -65,6 +65,9 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
   String invoiceType = 'Tax Invoice';
   bool saving = false;
   Timer? _saveTimer;
+  DateTime? shootDate;
+  String? shootType;
+  final shootVenueController = TextEditingController();
 
   @override
   void initState() {
@@ -89,6 +92,9 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     company = invoice.company;
     client = invoice.client;
     invoiceType = invoice.type;
+    shootDate = invoice.shootDate;
+    shootType = invoice.shootType;
+    shootVenueController.text = invoice.shootVenue ?? '';
     items = invoice.items
         .map(
           (item) => _ItemDraft(
@@ -128,6 +134,9 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
         if (draft['invoiceDate'] != null) invoiceDate = DateTime.parse(draft['invoiceDate']);
         if (draft['dueDate'] != null) dueDate = DateTime.parse(draft['dueDate']);
         if (draft['invoiceType'] != null) invoiceType = draft['invoiceType'];
+        if (draft['shootDate'] != null) shootDate = DateTime.parse(draft['shootDate']);
+        shootType = draft['shootType'];
+        shootVenueController.text = draft['shootVenue'] ?? '';
         
         final cId = draft['companyId'];
         if (cId != null) {
@@ -172,6 +181,9 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
       'companyId': company?.id,
       'clientId': client?.id,
       'invoiceType': invoiceType,
+      'shootDate': shootDate?.toIso8601String(),
+      'shootType': shootType,
+      'shootVenue': shootVenueController.text,
       'items': items.map((e) => {
         'description': e.description.text,
         'quantity': e.quantity.text,
@@ -187,6 +199,7 @@ class _InvoiceComposerState extends State<InvoiceComposer> {
     paid.dispose();
     discountAmount.dispose();
     notes.dispose();
+    shootVenueController.dispose();
     for (final item in items) {
       item.dispose();
     }
@@ -399,6 +412,70 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.4)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Shoot/Event Details (Optional)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E3A8A),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        borderRadius: BorderRadius.circular(16),
+                        dropdownColor: Colors.white,
+                        value: shootType,
+                        decoration: const InputDecoration(labelText: 'Shoot Type', isDense: true),
+                        items: ['', 'Wedding', 'Pre-Wedding', 'Engagement', 'Portrait', 'Event', 'Maternity', 'Newborn', 'Corporate', 'Other']
+                            .map((type) => DropdownMenuItem(value: type.isEmpty ? null : type, child: Text(type.isEmpty ? 'None' : type)))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() => shootType = value);
+                          _onChanged();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _OptionalDateField(
+                        label: 'Shoot Date',
+                        value: shootDate,
+                        onChanged: (value) {
+                          setState(() => shootDate = value);
+                          _onChanged();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: shootVenueController,
+                  decoration: const InputDecoration(
+                    labelText: 'Shoot Venue / Location',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => _onChanged(),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 18),
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -570,6 +647,9 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
       createdAt: widget.invoiceToEdit?.createdAt ?? DateTime.now(),
       type: invoiceType,
       payments: draftPayments,
+      shootDate: shootDate,
+      shootType: shootType,
+      shootVenue: shootVenueController.text.trim().isEmpty ? null : shootVenueController.text.trim(),
     );
   }
 
@@ -1046,6 +1126,56 @@ class _Facts extends StatelessWidget {
         _FactLine('${invoice.type} #', invoice.number, alignEnd: alignEnd),
         _FactLine('Date', dateFormatter.format(invoice.date), alignEnd: alignEnd),
         _FactLine('Due date', dateFormatter.format(invoice.dueDate), alignEnd: alignEnd),
+        if (invoice.shootDate != null)
+          _FactLine('Shoot Date', dateFormatter.format(invoice.shootDate!), alignEnd: alignEnd),
+        if (invoice.shootVenue != null && invoice.shootVenue!.isNotEmpty)
+          _FactLine('Shoot Venue', invoice.shootVenue!, alignEnd: alignEnd),
+        if (invoice.shootType != null && invoice.shootType!.isNotEmpty)
+          _FactLine('Shoot Type', invoice.shootType!, alignEnd: alignEnd),
+      ],
+    );
+  }
+}
+
+class _OptionalDateField extends StatelessWidget {
+  const _OptionalDateField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final DateTime? value;
+  final ValueChanged<DateTime?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: context,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2035),
+                initialDate: value ?? DateTime.now(),
+              );
+              if (picked != null) onChanged(picked);
+            },
+            icon: const Icon(Icons.calendar_today_outlined),
+            label: Text(value == null ? label : '$label: ${dateFormatter.format(value!)}'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            ),
+          ),
+        ),
+        if (value != null)
+          IconButton(
+            icon: const Icon(Icons.clear, size: 18),
+            onPressed: () => onChanged(null),
+            tooltip: 'Clear Date',
+          ),
       ],
     );
   }

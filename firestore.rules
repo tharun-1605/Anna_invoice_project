@@ -91,7 +91,10 @@ service cloud.firestore {
           'type',
           'discountAmount',
           'payments',
-          'isReminderDismissed'
+          'isReminderDismissed',
+          'shootDate',
+          'shootVenue',
+          'shootType'
         ])
         && isString(data.number)
         && isString(data.notes)
@@ -123,7 +126,10 @@ service cloud.firestore {
         && isNumber(data.amountDue)
         && isNumber(data.discountAmount)
         && isString(data.type)
-        && data.payments is list;
+        && data.payments is list
+        && (data.shootDate is timestamp || data.shootDate == null || !data.keys().hasAny(['shootDate']))
+        && (data.shootVenue is string || data.shootVenue == null || !data.keys().hasAny(['shootVenue']))
+        && (data.shootType is string || data.shootType == null || !data.keys().hasAny(['shootType']));
     }
 
     match /companies/{companyId} {

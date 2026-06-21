@@ -147,6 +147,8 @@ class _InvoicesPageState extends State<InvoicesPage> {
 
     final filtered =
         widget.invoices.where((inv) {
+          if (inv.type == 'Quote') return false;
+
           if (query.isNotEmpty) {
             final matches =
                 inv.number.toLowerCase().contains(query) ||
@@ -851,6 +853,26 @@ class InvoiceActionRow extends StatelessWidget {
                                         color: Colors.black87,
                                       ),
                                     ),
+                                    if (invoice.shootType != null || invoice.shootDate != null || (invoice.shootVenue != null && invoice.shootVenue!.isNotEmpty)) ...[
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.camera_alt_outlined, size: 14, color: Color(0xFF2563EB)),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              '${invoice.shootType ?? "Shoot"} on ${invoice.shootDate != null ? dateFormatter.format(invoice.shootDate!) : "TBD"}'
+                                              '${invoice.shootVenue != null && invoice.shootVenue!.isNotEmpty ? " at ${invoice.shootVenue!}" : ""}',
+                                              style: const TextStyle(
+                                                color: Color(0xFF4B5563),
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                     const SizedBox(height: 6),
                                     Wrap(
                                       crossAxisAlignment:
@@ -1071,6 +1093,26 @@ class InvoiceActionRow extends StatelessWidget {
                                   'Company: ${invoice.company.name}',
                                   style: const TextStyle(color: Colors.black87),
                                 ),
+                                if (invoice.shootType != null || invoice.shootDate != null || (invoice.shootVenue != null && invoice.shootVenue!.isNotEmpty)) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.camera_alt_outlined, size: 14, color: Color(0xFF2563EB)),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          '${invoice.shootType ?? "Shoot"} on ${invoice.shootDate != null ? dateFormatter.format(invoice.shootDate!) : "TBD"}'
+                                          '${invoice.shootVenue != null && invoice.shootVenue!.isNotEmpty ? " at ${invoice.shootVenue!}" : ""}',
+                                          style: const TextStyle(
+                                            color: Color(0xFF4B5563),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                                 const SizedBox(height: 6),
                                 Wrap(
                                   crossAxisAlignment: WrapCrossAlignment.center,
