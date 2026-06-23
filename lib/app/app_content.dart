@@ -17,6 +17,7 @@ import '../pages/leads_page.dart';
 import '../pages/packages_page.dart';
 import '../pages/reminders_page.dart';
 import '../pages/sales_page.dart';
+import '../pages/settings_page.dart';
 import '../services/invoice_store.dart';
 import 'app_view.dart';
 
@@ -141,6 +142,7 @@ class AppContent extends StatelessWidget {
                 initialType: initialInvoiceType,
                 initialClient: initialComposerClient,
               ),
+            AppView.settings => const SettingsPage(),
           };
 
     return AnimatedSwitcher(

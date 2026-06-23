@@ -113,6 +113,12 @@ class SideNav extends StatelessWidget {
                   icon: const Icon(Icons.notifications_outlined),
                 ),
               ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => onViewChanged(AppView.settings),
+                icon: const Icon(Icons.settings_outlined),
+                color: view == AppView.settings ? const Color(0xFF007AFF) : const Color(0xFF4B5563),
+              ),
             ],
           ),
         ],
@@ -147,6 +153,12 @@ class MobileBar extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
                 const Spacer(),
+                IconButton(
+                  onPressed: () => onViewChanged(AppView.settings),
+                  icon: const Icon(Icons.settings_outlined),
+                  color: view == AppView.settings ? const Color(0xFF007AFF) : const Color(0xFF4B5563),
+                ),
+                const SizedBox(width: 4),
                 Badge(
                   isLabelVisible: pendingReminders > 0,
                   smallSize: 8,

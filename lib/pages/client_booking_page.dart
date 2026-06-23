@@ -257,21 +257,22 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     TextButton.icon(
                       onPressed: () => _deleteQuote(quote),
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
                       label: const Text('Delete Request', style: TextStyle(color: Colors.red)),
                     ),
-                    const SizedBox(width: 12),
                     OutlinedButton.icon(
                       onPressed: () => _viewPdf(quote),
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: const Text('View PDF'),
                     ),
-                    const SizedBox(width: 12),
                     FilledButton.icon(
                       onPressed: () => _convertToInvoice(quote),
                       icon: const Icon(Icons.check_circle_outline),
@@ -480,7 +481,9 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
             children: [
               TextButton.icon(
                 onPressed: () => setState(() => _activeAdminTab = 0),
@@ -493,7 +496,6 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
               TextButton.icon(
                 onPressed: () => setState(() => _activeAdminTab = 1),
                 icon: Icon(Icons.preview_outlined, color: _activeAdminTab == 1 ? const Color(0xFF2563EB) : Colors.grey),
@@ -509,19 +511,14 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
           ),
           const Divider(height: 24),
           if (quoteInvoices.isEmpty)
-            const Expanded(
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
               child: Center(
                 child: EmptyState('No quote requests received yet.'),
               ),
             )
           else
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(bottom: 24),
-                itemCount: quoteInvoices.length,
-                itemBuilder: (context, index) => _buildQuoteCard(quoteInvoices[index]),
-              ),
-            ),
+            ...quoteInvoices.map((quote) => _buildQuoteCard(quote)),
         ],
       );
     }
@@ -556,7 +553,9 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
             children: [
               TextButton.icon(
                 onPressed: () => setState(() => _activeAdminTab = 0),
@@ -569,7 +568,6 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
               TextButton.icon(
                 onPressed: () => setState(() => _activeAdminTab = 1),
                 icon: Icon(Icons.preview_outlined, color: _activeAdminTab == 1 ? const Color(0xFF2563EB) : Colors.grey),
@@ -799,18 +797,45 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         padding: const EdgeInsets.all(18),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Personal & Shoot details',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A)),
-              ),
-              const SizedBox(height: 16),
-              Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 500;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextFormField(
+                  const Text(
+                    'Personal & Shoot details',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A)),
+                  ),
+                  const SizedBox(height: 16),
+                  if (isWide)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _nameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Your Full Name *',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                            validator: requiredField,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Phone Number *',
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                            validator: requiredField,
+                          ),
+                        ),
+                      ],
+                    )
+                  else ...[
+                    TextFormField(
                       controller: _nameCtrl,
                       decoration: const InputDecoration(
                         labelText: 'Your Full Name *',
@@ -818,10 +843,8 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                       ),
                       validator: requiredField,
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: TextFormField(
+                    const SizedBox(height: 14),
+                    TextFormField(
                       controller: _phoneCtrl,
                       decoration: const InputDecoration(
                         labelText: 'Phone Number *',
@@ -829,23 +852,66 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                       ),
                       validator: requiredField,
                     ),
+                  ],
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Email Address *',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    validator: requiredField,
                   ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _emailCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address *',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                validator: requiredField,
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
+                  const SizedBox(height: 14),
+                  if (isWide)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            value: _selectedShootType,
+                            decoration: const InputDecoration(labelText: 'Shoot Type'),
+                            items: ['Portrait', 'Wedding', 'Pre-Wedding', 'Engagement', 'Event', 'Maternity', 'Newborn', 'Corporate', 'Other']
+                                .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                                .toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedShootType = val;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now().add(const Duration(days: 7)),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now().add(const Duration(days: 365)),
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  _selectedDate = picked;
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.calendar_today_outlined),
+                            label: Text(
+                              _selectedDate == null
+                                  ? 'Preferred Date *'
+                                  : 'Date: ${dateFormatter.format(_selectedDate!)}',
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else ...[
+                    DropdownButtonFormField<String>(
                       isExpanded: true,
                       value: _selectedShootType,
                       decoration: const InputDecoration(labelText: 'Shoot Type'),
@@ -858,55 +924,56 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                         });
                       },
                     ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now().add(const Duration(days: 7)),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _selectedDate = picked;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.calendar_today_outlined),
+                        label: Text(
+                          _selectedDate == null
+                              ? 'Preferred Date *'
+                              : 'Date: ${dateFormatter.format(_selectedDate!)}',
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _venueCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Event Venue / Address *',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                    ),
+                    validator: requiredField,
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now().add(const Duration(days: 7)),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _selectedDate = picked;
-                          });
-                        }
-                      },
-                      icon: const Icon(Icons.calendar_today_outlined),
-                      label: Text(
-                        _selectedDate == null
-                            ? 'Preferred Date *'
-                            : 'Date: ${dateFormatter.format(_selectedDate!)}',
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
-                      ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _notesCtrl,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Special Requests / Event Details',
+                      alignLabelWithHint: true,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _venueCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Event Venue / Address *',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                ),
-                validator: requiredField,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _notesCtrl,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Special Requests / Event Details',
-                  alignLabelWithHint: true,
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
@@ -1018,7 +1085,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         padding: const EdgeInsets.all(24.0),
         child: GlassContainer(
           applyBlur: false,
-          width: 500,
+          constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(32),
           color: Colors.white.withOpacity(0.8),
           child: Column(

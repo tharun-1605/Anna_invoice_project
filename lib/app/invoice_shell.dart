@@ -13,6 +13,8 @@ import 'app_content.dart';
 import 'app_view.dart';
 import 'navigation.dart';
 import '../utils/download_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/lock_screen.dart';
 
 class InvoiceShell extends StatefulWidget {
   const InvoiceShell({super.key});
@@ -21,7 +23,7 @@ class InvoiceShell extends StatefulWidget {
   State<InvoiceShell> createState() => _InvoiceShellState();
 }
 
-class _InvoiceShellState extends State<InvoiceShell> {
+class _InvoiceShellState extends State<InvoiceShell> with WidgetsBindingObserver {
   late final InvoiceStore store;
   AppView view = AppView.dashboard;
   Invoice? invoiceToEdit;
@@ -29,10 +31,12 @@ class _InvoiceShellState extends State<InvoiceShell> {
   String initialInvoiceType = 'Tax Invoice';
   Client? initialComposerClient;
   bool isPublicPortal = false;
+  bool _isLocked = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     store = InvoiceStore(FirebaseFirestore.instance);
     DownloadHelper.requestStoragePermissionOnStartup();
 
@@ -46,6 +50,33 @@ class _InvoiceShellState extends State<InvoiceShell> {
     if (hasBookingQuery) {
       view = AppView.bookingPortal;
       isPublicPortal = true;
+    }
+
+    _checkAppLock();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _checkAppLock() async {
+    if (isPublicPortal) return;
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('app_lock_enabled') ?? false;
+    if (enabled) {
+      setState(() {
+        _isLocked = true;
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (isPublicPortal) return;
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _checkAppLock();
     }
   }
 
@@ -91,6 +122,16 @@ class _InvoiceShellState extends State<InvoiceShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLocked) {
+      return LockScreen(
+        onUnlocked: () {
+          setState(() {
+            _isLocked = false;
+          });
+        },
+      );
+    }
+
     return StreamBuilder<List<Company>>(
       stream: store.companies(),
       builder: (context, companiesSnapshot) {
