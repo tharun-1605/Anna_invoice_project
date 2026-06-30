@@ -61,7 +61,20 @@ class ZaInvoiceApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const InvoiceShell(),
+      onGenerateInitialRoutes: (initialRoute) {
+        return [
+          MaterialPageRoute(
+            settings: RouteSettings(name: initialRoute),
+            builder: (context) => InvoiceShell(initialRoute: initialRoute),
+          ),
+        ];
+      },
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => InvoiceShell(initialRoute: settings.name),
+        );
+      },
     );
   }
 }

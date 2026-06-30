@@ -17,7 +17,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/lock_screen.dart';
 
 class InvoiceShell extends StatefulWidget {
-  const InvoiceShell({super.key});
+  const InvoiceShell({super.key, this.initialRoute});
+
+  final String? initialRoute;
 
   @override
   State<InvoiceShell> createState() => _InvoiceShellState();
@@ -40,13 +42,16 @@ class _InvoiceShellState extends State<InvoiceShell> with WidgetsBindingObserver
     store = InvoiceStore(FirebaseFirestore.instance);
     DownloadHelper.requestStoragePermissionOnStartup();
 
-    final uri = Uri.base;
+    final requestedRoute = widget.initialRoute ?? Uri.base.toString();
+    final uri = Uri.tryParse(requestedRoute) ?? Uri.base;
     final hasBookingQuery = uri.fragment.contains('booking') || 
                             uri.path.contains('booking') || 
                             uri.queryParameters.containsKey('booking') ||
                             uri.fragment.contains('portal') ||
                             uri.path.contains('portal') ||
-                            uri.queryParameters.containsKey('portal');
+                            uri.queryParameters.containsKey('portal') ||
+                            requestedRoute.contains('booking') ||
+                            requestedRoute.contains('portal');
     if (hasBookingQuery) {
       view = AppView.bookingPortal;
       isPublicPortal = true;
