@@ -42,12 +42,16 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
-  final _venueCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
   final Set<String> _selectedServices = {};
-  DateTime? _selectedDate;
-  String? _selectedShootType = 'Wedding & Reception';
+  final List<BookingEvent> _events = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _events.add(BookingEvent());
+  }
 
   static const List<String> _shootTypes = [
     '60th Wedding',
@@ -66,7 +70,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
     'Religious Events',
     'Rituals - Bride',
     'Rituals - Groom',
-    'Wedding & Reception',
+    'Wedding',
   ];
 
   static const List<String> _availableServices = [
@@ -215,7 +219,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          'Requested on: ${dateFormatter.format(quote.createdAt)} • Total: ${money.format(quote.total)}',
+          'Requested on: ${dateFormatter.format(quote.createdAt)}',
           style: const TextStyle(fontSize: 13, color: Colors.grey),
         ),
         leading: const CircleAvatar(
@@ -265,28 +269,20 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Selected Deliverables & Pricing',
+                            'Selected Services',
                             style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
                           ),
                           const SizedBox(height: 8),
                           ...quote.items.map((item) => Padding(
                                 padding: const EdgeInsets.only(bottom: 6),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
+                                    const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                                    const SizedBox(width: 8),
                                     Expanded(child: Text(item.description)),
-                                    Text(money.format(item.price)),
                                   ],
                                 ),
                               )),
-                          const Divider(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Estimated Total', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text(money.format(quote.total), style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
-                            ],
-                          ),
                         ],
                       ),
                     ),
@@ -330,8 +326,10 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
-    _venueCtrl.dispose();
     _notesCtrl.dispose();
+    for (final event in _events) {
+      event.dispose();
+    }
     super.dispose();
   }
 
@@ -347,9 +345,9 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
       return;
     }
 
-    if (_selectedDate == null) {
+    if (_events.any((e) => e.date == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a preferred shoot date.')),
+        const SnackBar(content: Text('Please select a preferred date for all events.')),
       );
       return;
     }
@@ -361,13 +359,37 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
     try {
       final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
       
+      // Determine earliest event date for primary shootDate
+      DateTime? earliestDate;
+      for (final event in _events) {
+        if (event.date != null) {
+          if (earliestDate == null || event.date!.isBefore(earliestDate)) {
+            earliestDate = event.date;
+          }
+        }
+      }
+
+      final primaryShootType = _events.map((e) => e.shootType).whereType<String>().join(', ');
+      final primaryShootVenue = _events.map((e) => e.venueCtrl.text.trim()).join('; ');
+
+      // Create event summary for notes
+      final eventsSummary = _events.asMap().entries.map((entry) {
+        final idx = entry.key + 1;
+        final event = entry.value;
+        final dateStr = event.date != null ? dateFormatter.format(event.date!) : 'TBD';
+        return 'Event $idx: ${event.shootType} on $dateStr at ${event.venueCtrl.text.trim()}';
+      }).join('\n');
+
+      final combinedNotes = 'Event Schedule:\n$eventsSummary\n\n'
+          'Special Requests / Notes:\n${_notesCtrl.text.trim()}';
+
       // Create Client metadata (embedded in the Quote)
       final clientObj = Client(
         id: guestId,
         name: _nameCtrl.text.trim(),
         phone: _phoneCtrl.text.trim(),
         email: _emailCtrl.text.trim(),
-        address: _venueCtrl.text.trim(),
+        address: primaryShootVenue,
       );
 
       // Create Quote Invoice Items
@@ -396,16 +418,16 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         company: defaultCompany,
         client: clientObj,
         date: DateTime.now(),
-        dueDate: _selectedDate!,
+        dueDate: earliestDate ?? DateTime.now(),
         items: invoiceItems,
         paid: 0.0,
-        notes: _notesCtrl.text.trim(),
+        notes: combinedNotes.trim(),
         createdAt: DateTime.now(),
         payments: [],
         type: 'Quote',
-        shootDate: _selectedDate,
-        shootVenue: _venueCtrl.text.trim(),
-        shootType: _selectedShootType,
+        shootDate: earliestDate,
+        shootVenue: primaryShootVenue,
+        shootType: primaryShootType,
       );
       await widget.store.saveInvoice(quote);
 
@@ -415,10 +437,10 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         name: _nameCtrl.text.trim(),
         phone: _phoneCtrl.text.trim(),
         email: _emailCtrl.text.trim(),
-        address: _venueCtrl.text.trim(),
-        eventDate: dateFormatter.format(_selectedDate!),
+        address: primaryShootVenue,
+        eventDate: _events.map((e) => e.date != null ? dateFormatter.format(e.date!) : 'TBD').join(', '),
         priority: 'High',
-        reference: 'Quote Requested: ${_selectedShootType ?? "Event"} (${_selectedServices.join(", ")})',
+        reference: 'Quote Requested:\n$eventsSummary\n\nServices: ${_selectedServices.join(", ")}',
       );
       await widget.store.saveLead(lead);
 
@@ -439,12 +461,14 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
   void _resetForm() {
     setState(() {
       _selectedServices.clear();
-      _selectedDate = null;
-      _selectedShootType = 'Wedding & Reception';
+      for (final event in _events) {
+        event.dispose();
+      }
+      _events.clear();
+      _events.add(BookingEvent());
       _nameCtrl.clear();
       _phoneCtrl.clear();
       _emailCtrl.clear();
-      _venueCtrl.clear();
       _notesCtrl.clear();
       _submitted = false;
     });
@@ -727,105 +751,143 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                     ),
                     validator: requiredField,
                   ),
-                  const SizedBox(height: 14),
-                  if (isWide)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            value: _selectedShootType,
-                            decoration: const InputDecoration(labelText: 'Shoot Type'),
-                            items: _shootTypes
-                                .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                                .toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedShootType = val;
-                              });
-                            },
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Event Schedule *',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A)),
+                  ),
+                  const SizedBox(height: 12),
+                  ..._events.indexed.map((entry) {
+                    final index = entry.$1;
+                    final event = entry.$2;
+                    return Container(
+                      key: ValueKey(event),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withOpacity(0.4)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Event #${index + 1}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E3A8A),
+                                  fontSize: 14,
+                                ),
+                              ),
+                              if (_events.length > 1)
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      event.dispose();
+                                      _events.removeAt(index);
+                                    });
+                                  },
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  tooltip: 'Remove Event',
+                                ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now().add(const Duration(days: 7)),
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(const Duration(days: 365)),
+                          const SizedBox(height: 8),
+                          LayoutBuilder(
+                            builder: (context, eventConstraints) {
+                              final wideEvent = eventConstraints.maxWidth >= 500;
+                              final typeDropdown = DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: event.shootType,
+                                decoration: const InputDecoration(
+                                  labelText: 'Shoot Type *',
+                                  isDense: true,
+                                ),
+                                items: _shootTypes
+                                    .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                                    .toList(),
+                                onChanged: (val) {
+                                  setState(() {
+                                    event.shootType = val;
+                                  });
+                                },
                               );
-                              if (picked != null) {
-                                setState(() {
-                                  _selectedDate = picked;
-                                });
+                              final datePickerButton = OutlinedButton.icon(
+                                onPressed: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now().add(const Duration(days: 7)),
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                                  );
+                                  if (picked != null) {
+                                    setState(() {
+                                      event.date = picked;
+                                    });
+                                  }
+                                },
+                                icon: const Icon(Icons.calendar_today_outlined, size: 18),
+                                label: Text(
+                                  event.date == null
+                                      ? 'Preferred Date *'
+                                      : dateFormatter.format(event.date!),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                                  side: BorderSide(color: Colors.grey.shade400),
+                                ),
+                              );
+
+                              if (wideEvent) {
+                                return Row(
+                                  children: [
+                                    Expanded(child: typeDropdown),
+                                    const SizedBox(width: 14),
+                                    Expanded(child: datePickerButton),
+                                  ],
+                                );
+                              } else {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    typeDropdown,
+                                    const SizedBox(height: 14),
+                                    datePickerButton,
+                                  ],
+                                );
                               }
                             },
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            label: Text(
-                              _selectedDate == null
-                                  ? 'Preferred Date *'
-                                  : 'Date: ${dateFormatter.format(_selectedDate!)}',
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
-                            ),
                           ),
-                        ),
-                      ],
-                    )
-                  else ...[
-                    DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      value: _selectedShootType,
-                      decoration: const InputDecoration(labelText: 'Shoot Type'),
-                      items: _shootTypes
-                          .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                          .toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedShootType = val;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now().add(const Duration(days: 7)),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
-                          );
-                          if (picked != null) {
-                            setState(() {
-                              _selectedDate = picked;
-                            });
-                          }
-                        },
-                        icon: const Icon(Icons.calendar_today_outlined),
-                        label: Text(
-                          _selectedDate == null
-                              ? 'Preferred Date *'
-                              : 'Date: ${dateFormatter.format(_selectedDate!)}',
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-                        ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: event.venueCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Event Venue / Address *',
+                              prefixIcon: Icon(Icons.location_on_outlined),
+                              isDense: true,
+                            ),
+                            validator: requiredField,
+                          ),
+                        ],
                       ),
+                    );
+                  }),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _events.add(BookingEvent());
+                      });
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Another Event / Date'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                     ),
-                  ],
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _venueCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Event Venue / Address *',
-                      prefixIcon: Icon(Icons.location_on_outlined),
-                    ),
-                    validator: requiredField,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
@@ -1011,7 +1073,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Thank you, ${_nameCtrl.text.trim()}! Your request for $_selectedShootType on ${_selectedDate != null ? dateFormatter.format(_selectedDate!) : ""} has been received.',
+                'Thank you, ${_nameCtrl.text.trim()}! Your quote request has been successfully submitted.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),
@@ -1037,3 +1099,20 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
     );
   }
 }
+
+class BookingEvent {
+  BookingEvent({
+    this.shootType = 'Wedding',
+    this.date,
+    String venue = '',
+  }) : venueCtrl = TextEditingController(text: venue);
+
+  String? shootType;
+  DateTime? date;
+  final TextEditingController venueCtrl;
+
+  void dispose() {
+    venueCtrl.dispose();
+  }
+}
+
