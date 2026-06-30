@@ -25,7 +25,8 @@ class InvoiceShell extends StatefulWidget {
   State<InvoiceShell> createState() => _InvoiceShellState();
 }
 
-class _InvoiceShellState extends State<InvoiceShell> with WidgetsBindingObserver {
+class _InvoiceShellState extends State<InvoiceShell>
+    with WidgetsBindingObserver {
   late final InvoiceStore store;
   AppView view = AppView.dashboard;
   Invoice? invoiceToEdit;
@@ -44,14 +45,15 @@ class _InvoiceShellState extends State<InvoiceShell> with WidgetsBindingObserver
 
     final requestedRoute = widget.initialRoute ?? Uri.base.toString();
     final uri = Uri.tryParse(requestedRoute) ?? Uri.base;
-    final hasBookingQuery = uri.fragment.contains('booking') || 
-                            uri.path.contains('booking') || 
-                            uri.queryParameters.containsKey('booking') ||
-                            uri.fragment.contains('portal') ||
-                            uri.path.contains('portal') ||
-                            uri.queryParameters.containsKey('portal') ||
-                            requestedRoute.contains('booking') ||
-                            requestedRoute.contains('portal');
+    final hasBookingQuery =
+        uri.fragment.contains('booking') ||
+        uri.path.contains('booking') ||
+        uri.queryParameters.containsKey('booking') ||
+        uri.fragment.contains('portal') ||
+        uri.path.contains('portal') ||
+        uri.queryParameters.containsKey('portal') ||
+        requestedRoute.contains('booking') ||
+        requestedRoute.contains('portal');
     if (hasBookingQuery) {
       view = AppView.bookingPortal;
       isPublicPortal = true;
@@ -80,7 +82,8 @@ class _InvoiceShellState extends State<InvoiceShell> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (isPublicPortal) return;
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _checkAppLock();
     }
   }
@@ -162,119 +165,150 @@ class _InvoiceShellState extends State<InvoiceShell> with WidgetsBindingObserver
                             final packages = packagesSnapshot.data ?? [];
                             final studioItems = studioItemsSnapshot.data ?? [];
                             final loading =
-                                companiesSnapshot.connectionState == ConnectionState.waiting ||
-                                    leadsSnapshot.connectionState == ConnectionState.waiting ||
-                                    clientsSnapshot.connectionState == ConnectionState.waiting ||
-                                    invoicesSnapshot.connectionState == ConnectionState.waiting ||
-                                    packagesSnapshot.connectionState == ConnectionState.waiting ||
-                                    studioItemsSnapshot.connectionState == ConnectionState.waiting;
+                                companiesSnapshot.connectionState ==
+                                    ConnectionState.waiting ||
+                                leadsSnapshot.connectionState ==
+                                    ConnectionState.waiting ||
+                                clientsSnapshot.connectionState ==
+                                    ConnectionState.waiting ||
+                                invoicesSnapshot.connectionState ==
+                                    ConnectionState.waiting ||
+                                packagesSnapshot.connectionState ==
+                                    ConnectionState.waiting ||
+                                studioItemsSnapshot.connectionState ==
+                                    ConnectionState.waiting;
 
-                    return PopScope(
-                      canPop: false,
-                      onPopInvokedWithResult: (didPop, result) async {
-                        if (didPop) return;
-                        final shouldPop = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Exit App'),
-                            content: const Text('Are you sure you want to exit the app?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).pop(false),
-                                child: const Text('Cancel'),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.of(context).pop(true),
-                                child: const Text('Exit'),
-                              ),
-                            ],
-                          ),
-                        ) ?? false;
-                        
-                        if (shouldPop && context.mounted) {
-                          SystemNavigator.pop();
-                        }
-                      },
-                      child: Scaffold(
-                        backgroundColor: Colors.transparent,
-                        extendBodyBehindAppBar: true,
-                        body: Stack(
-                          children: [
-                            Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFFE0EAFC),
-                                    Color(0xFFCFDEF3),
-                                    Color(0xFFFDEBEE),
-                                    Color(0xFFE8F5E9),
+                            return PopScope(
+                              canPop: false,
+                              onPopInvokedWithResult: (didPop, result) async {
+                                if (didPop) return;
+                                final shouldPop =
+                                    await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Exit App'),
+                                        content: const Text(
+                                          'Are you sure you want to exit the app?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(
+                                              context,
+                                            ).pop(false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          FilledButton(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(true),
+                                            child: const Text('Exit'),
+                                          ),
+                                        ],
+                                      ),
+                                    ) ??
+                                    false;
+
+                                if (shouldPop && context.mounted) {
+                                  SystemNavigator.pop();
+                                }
+                              },
+                              child: Scaffold(
+                                backgroundColor: Colors.transparent,
+                                extendBodyBehindAppBar: true,
+                                body: Stack(
+                                  children: [
+                                    Container(
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Color(0xFFE0EAFC),
+                                            Color(0xFFCFDEF3),
+                                            Color(0xFFFDEBEE),
+                                            Color(0xFFE8F5E9),
+                                          ],
+                                          stops: [0.0, 0.4, 0.7, 1.0],
+                                        ),
+                                      ),
+                                    ),
+                                    SafeArea(
+                                      child: LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final wide =
+                                              constraints.maxWidth >= 900;
+                                          final content = AppContent(
+                                            view: view,
+                                            store: store,
+                                            companies: companies,
+                                            leads: leads,
+                                            clients: clients,
+                                            invoices: invoices,
+                                            packages: packages,
+                                            studioItems: studioItems,
+                                            loading: loading,
+                                            onViewChanged: _changeView,
+                                            onEditInvoice: _editInvoice,
+                                            onViewLedger: _viewLedger,
+                                            onCreateQuote: _createQuote,
+                                            invoiceToEdit: invoiceToEdit,
+                                            ledgerClient: ledgerClient,
+                                            initialInvoiceType:
+                                                initialInvoiceType,
+                                            initialComposerClient:
+                                                initialComposerClient,
+                                            isPublicPortal: isPublicPortal,
+                                          );
+
+                                          final now = DateTime.now();
+                                          final pendingReminders = invoices
+                                              .where((inv) {
+                                                return inv.type ==
+                                                        'Tax Invoice' &&
+                                                    inv.due > 0 &&
+                                                    now.isAfter(inv.dueDate) &&
+                                                    !inv.isReminderDismissed;
+                                              })
+                                              .length;
+
+                                          if (isPublicPortal) {
+                                            return content;
+                                          }
+
+                                          if (!wide) {
+                                            return Column(
+                                              children: [
+                                                MobileBar(
+                                                  view: view,
+                                                  onViewChanged: _changeView,
+                                                  pendingReminders:
+                                                      pendingReminders,
+                                                ),
+                                                Expanded(child: content),
+                                              ],
+                                            );
+                                          }
+
+                                          return Row(
+                                            children: [
+                                              SideNav(
+                                                view: view,
+                                                onViewChanged: _changeView,
+                                                pendingReminders:
+                                                    pendingReminders,
+                                              ),
+                                              Expanded(child: content),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ),
                                   ],
-                                  stops: [0.0, 0.4, 0.7, 1.0],
                                 ),
                               ),
-                            ),
-                            SafeArea(
-                              child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final wide = constraints.maxWidth >= 900;
-                            final content = AppContent(
-                              view: view,
-                              store: store,
-                              companies: companies,
-                              leads: leads,
-                              clients: clients,
-                              invoices: invoices,
-                              packages: packages,
-                              studioItems: studioItems,
-                              loading: loading,
-                              onViewChanged: _changeView,
-                              onEditInvoice: _editInvoice,
-                              onViewLedger: _viewLedger,
-                              onCreateQuote: _createQuote,
-                              invoiceToEdit: invoiceToEdit,
-                              ledgerClient: ledgerClient,
-                              initialInvoiceType: initialInvoiceType,
-                              initialComposerClient: initialComposerClient,
-                              isPublicPortal: isPublicPortal,
-                            );
-
-                            final now = DateTime.now();
-                            final pendingReminders = invoices.where((inv) {
-                              return inv.type == 'Tax Invoice' && 
-                                     inv.due > 0 && 
-                                     now.isAfter(inv.dueDate) && 
-                                     !inv.isReminderDismissed;
-                            }).length;
-
-                            if (isPublicPortal) {
-                              return content;
-                            }
-
-                            if (!wide) {
-                              return Column(
-                                children: [
-                                  MobileBar(view: view, onViewChanged: _changeView, pendingReminders: pendingReminders),
-                                  Expanded(child: content),
-                                ],
-                              );
-                            }
-
-                            return Row(
-                              children: [
-                                SideNav(view: view, onViewChanged: _changeView, pendingReminders: pendingReminders),
-                                Expanded(child: content),
-                              ],
                             );
                           },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+                        );
+                      },
                     );
                   },
                 );
@@ -284,8 +318,5 @@ class _InvoiceShellState extends State<InvoiceShell> with WidgetsBindingObserver
         );
       },
     );
-      },
-    );
   }
 }
-
