@@ -45,10 +45,46 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
   final _venueCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
-  StudioPackage? _selectedPackage;
-  final Set<StudioItem> _selectedAddons = {};
+  final Set<String> _selectedServices = {};
   DateTime? _selectedDate;
-  String? _selectedShootType = 'Portrait';
+  String? _selectedShootType = 'Wedding & Reception';
+
+  static const List<String> _shootTypes = [
+    '60th Wedding',
+    'Baby Shower',
+    'Birthday',
+    'Corporate Events',
+    'Ear Piercing Ceremony',
+    'Engagement',
+    'Get together',
+    'House Warming',
+    'Naming Ceremony',
+    'Outdoor Post-Wedding',
+    'Outdoor Pre-Wedding',
+    'Puberty',
+    'Reception',
+    'Religious Events',
+    'Rituals - Bride',
+    'Rituals - Groom',
+    'Wedding & Reception',
+  ];
+
+  static const List<String> _availableServices = [
+    'Traditional Photography',
+    'Traditional Videography',
+    'Candid Photography',
+    'Candid Videography',
+    'Cinematography',
+    'Drone Shoot',
+    'Standard Album',
+    'Premium Album',
+    'Luxury Album',
+    'Pre-Wedding Shoot',
+    'Post-Wedding Shoot',
+    'Live Streaming',
+    'LED Wall',
+    'Photo Booth',
+  ];
   bool _submitted = false;
   bool _submitting = false;
   int _activeAdminTab = 0;
@@ -299,21 +335,10 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
     super.dispose();
   }
 
-  double get _totalPrice {
-    double total = 0.0;
-    if (_selectedPackage != null) {
-      total += _selectedPackage!.price;
-    }
-    for (final addon in _selectedAddons) {
-      total += addon.price;
-    }
-    return total;
-  }
-
   Future<void> _submitQuoteRequest(Company defaultCompany) async {
-    if (_selectedPackage == null) {
+    if (_selectedServices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a package first.')),
+        const SnackBar(content: Text('Please select at least one service.')),
       );
       return;
     }
@@ -346,18 +371,17 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
       );
 
       // Create Quote Invoice Items
-      final invoiceItems = [
-        InvoiceItem(
-          description: _selectedPackage!.name,
+      final invoiceItems = _selectedServices.map((serviceName) {
+        final matchingItem = widget.studioItems.firstWhere(
+          (item) => item.name.toLowerCase() == serviceName.toLowerCase(),
+          orElse: () => StudioItem(id: '', name: serviceName, price: 0.0),
+        );
+        return InvoiceItem(
+          description: serviceName,
           quantity: 1.0,
-          price: _selectedPackage!.price,
-        ),
-        ..._selectedAddons.map((item) => InvoiceItem(
-          description: item.name,
-          quantity: 1.0,
-          price: item.price,
-        )),
-      ];
+          price: matchingItem.price,
+        );
+      }).toList();
 
       // Auto-generate invoice number (Quote format Q-YYYYMMDDHHMM)
       final quoteNumber = 'Q-${DateTime.now().year}'
@@ -394,7 +418,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         address: _venueCtrl.text.trim(),
         eventDate: dateFormatter.format(_selectedDate!),
         priority: 'High',
-        reference: 'Quote Requested: ${_selectedPackage!.name}',
+        reference: 'Quote Requested: ${_selectedShootType ?? "Event"} (${_selectedServices.join(", ")})',
       );
       await widget.store.saveLead(lead);
 
@@ -414,10 +438,9 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
 
   void _resetForm() {
     setState(() {
-      _selectedPackage = null;
-      _selectedAddons.clear();
+      _selectedServices.clear();
       _selectedDate = null;
-      _selectedShootType = 'Portrait';
+      _selectedShootType = 'Wedding & Reception';
       _nameCtrl.clear();
       _phoneCtrl.clear();
       _emailCtrl.clear();
@@ -446,8 +469,6 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
       );
     }
     final defaultCompany = widget.companies.first;
-    final packages = widget.packages;
-    final addons = widget.studioItems;
     final quoteInvoices = widget.invoices.where((inv) => inv.type == 'Quote').toList();
 
     // If viewing in the admin app and the active tab is "Quote Requests" (0), show the list of quote requests.
@@ -591,39 +612,8 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
           const SizedBox(height: 24),
         ],
         
-        // 1. Packages Selection
         Text(
-          'Step 1: Choose Your Photography Package',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1E3A8A),
-              ),
-        ),
-        const SizedBox(height: 12),
-        packages.isEmpty
-            ? const EmptyState('No photography packages available.')
-            : ResponsiveGrid(
-                children: packages.map((pkg) => _buildPackageCard(pkg)).toList(),
-              ),
-        const SizedBox(height: 32),
-
-        // 2. Add-ons Selection
-        if (addons.isNotEmpty) ...[
-          Text(
-            'Step 2: Choose Optional Add-ons',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E3A8A),
-                ),
-          ),
-          const SizedBox(height: 12),
-          _buildAddonsSection(addons),
-          const SizedBox(height: 32),
-        ],
-
-        // 3. Shoot & Contact Details Form
-        Text(
-          'Step 3: Tell Us About Your Shoot',
+          'Configure Your Quote',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF1E3A8A),
@@ -661,131 +651,6 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildPackageCard(StudioPackage pkg) {
-    final isSelected = _selectedPackage?.id == pkg.id;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPackage = pkg;
-        });
-      },
-      child: GlassContainer(
-        applyBlur: false,
-        border: Border.all(
-          color: isSelected ? const Color(0xFF2563EB) : Colors.white.withOpacity(0.4),
-          width: isSelected ? 2.5 : 1,
-        ),
-        color: isSelected ? Colors.blue.withOpacity(0.05) : Colors.white.withOpacity(0.5),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      pkg.name,
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-                    ),
-                  ),
-                  if (isSelected)
-                    const Icon(Icons.check_circle, color: Color(0xFF2563EB))
-                  else
-                    const Icon(Icons.circle_outlined, color: Colors.grey),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                pkg.description,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.black54, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                money.format(pkg.price),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Color(0xFF1E3A8A),
-                ),
-              ),
-              if (pkg.deliverables.isNotEmpty) ...[
-                const Divider(height: 24),
-                const Text(
-                  'Includes:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
-                ),
-                const SizedBox(height: 6),
-                ...pkg.deliverables.take(3).map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.check, size: 14, color: Colors.green),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                item,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 12, color: Colors.black87),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddonsSection(List<StudioItem> addons) {
-    return GlassContainer(
-      applyBlur: false,
-      color: Colors.white.withOpacity(0.5),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Wrap(
-          spacing: 14,
-          runSpacing: 14,
-          children: addons.map((item) {
-            final isAdded = _selectedAddons.contains(item);
-            return FilterChip(
-              avatar: Icon(
-                isAdded ? Icons.add_circle : Icons.add_circle_outline,
-                size: 16,
-                color: isAdded ? Colors.white : const Color(0xFF2563EB),
-              ),
-              label: Text('${item.name} (+${money.format(item.price)})'),
-              selected: isAdded,
-              selectedColor: const Color(0xFF2563EB),
-              labelStyle: TextStyle(
-                color: isAdded ? Colors.white : Colors.black87,
-                fontWeight: isAdded ? FontWeight.bold : FontWeight.normal,
-              ),
-              onSelected: (val) {
-                setState(() {
-                  if (val) {
-                    _selectedAddons.add(item);
-                  } else {
-                    _selectedAddons.remove(item);
-                  }
-                });
-              },
-            );
-          }).toList(),
-        ),
-      ),
     );
   }
 
@@ -871,7 +736,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                             isExpanded: true,
                             value: _selectedShootType,
                             decoration: const InputDecoration(labelText: 'Shoot Type'),
-                            items: ['Portrait', 'Wedding', 'Pre-Wedding', 'Engagement', 'Event', 'Maternity', 'Newborn', 'Corporate', 'Other']
+                            items: _shootTypes
                                 .map((type) => DropdownMenuItem(value: type, child: Text(type)))
                                 .toList(),
                             onChanged: (val) {
@@ -915,7 +780,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                       isExpanded: true,
                       value: _selectedShootType,
                       decoration: const InputDecoration(labelText: 'Shoot Type'),
-                      items: ['Portrait', 'Wedding', 'Pre-Wedding', 'Engagement', 'Event', 'Maternity', 'Newborn', 'Corporate', 'Other']
+                      items: _shootTypes
                           .map((type) => DropdownMenuItem(value: type, child: Text(type)))
                           .toList(),
                       onChanged: (val) {
@@ -971,6 +836,83 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                       alignLabelWithHint: true,
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Services Required *',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A)),
+                  ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, gridConstraints) {
+                      final cols = gridConstraints.maxWidth >= 600 ? 2 : 1;
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: cols,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: cols == 2 ? 4.5 : 5.5,
+                        ),
+                        itemCount: _availableServices.length,
+                        itemBuilder: (context, index) {
+                          final service = _availableServices[index];
+                          final isSelected = _selectedServices.contains(service);
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedServices.remove(service);
+                                } else {
+                                  _selectedServices.add(service);
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFF2563EB).withOpacity(0.08)
+                                    : Colors.white.withOpacity(0.4),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF2563EB)
+                                      : Colors.grey.shade300,
+                                  width: isSelected ? 2.0 : 1.0,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isSelected
+                                        ? Icons.check_box_outlined
+                                        : Icons.check_box_outline_blank,
+                                    color: isSelected
+                                        ? const Color(0xFF2563EB)
+                                        : Colors.grey.shade600,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      service,
+                                      style: TextStyle(
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        color: isSelected ? const Color(0xFF1E3A8A) : Colors.black87,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ],
               );
             },
@@ -995,71 +937,32 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
             ),
             const Divider(height: 24),
             
-            // Package line
-            if (_selectedPackage != null) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      _selectedPackage!.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+            // Services list
+            if (_selectedServices.isNotEmpty) ...[
+              ..._selectedServices.map((serviceName) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          serviceName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(money.format(_selectedPackage!.price)),
-                ],
-              ),
-              const SizedBox(height: 8),
+                );
+              }),
             ] else ...[
               const Text(
-                'No package selected',
+                'No services selected',
                 style: TextStyle(color: Colors.black54, fontStyle: FontStyle.italic),
               ),
             ],
             
-            // Add-ons list
-            if (_selectedAddons.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Add-ons:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black54),
-              ),
-              const SizedBox(height: 4),
-              ..._selectedAddons.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '+ ${item.name}',
-                            style: const TextStyle(fontSize: 12, color: Colors.black87),
-                          ),
-                        ),
-                        Text(money.format(item.price), style: const TextStyle(fontSize: 12)),
-                      ],
-                    ),
-                  )),
-            ],
-            
-            const Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Estimated Total',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-                ),
-                Text(
-                  money.format(_totalPrice),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                    color: Color(0xFF2563EB),
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 24),
             
             _submitting
@@ -1108,7 +1011,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Thank you, ${_nameCtrl.text.trim()}! Your request for the ${_selectedPackage?.name} package on ${_selectedDate != null ? dateFormatter.format(_selectedDate!) : ""} has been received.',
+                'Thank you, ${_nameCtrl.text.trim()}! Your request for $_selectedShootType on ${_selectedDate != null ? dateFormatter.format(_selectedDate!) : ""} has been received.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),

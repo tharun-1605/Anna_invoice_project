@@ -441,7 +441,26 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                         dropdownColor: Colors.white,
                         value: shootType,
                         decoration: const InputDecoration(labelText: 'Shoot Type', isDense: true),
-                        items: ['', 'Wedding', 'Pre-Wedding', 'Engagement', 'Portrait', 'Event', 'Maternity', 'Newborn', 'Corporate', 'Other']
+                        items: [
+                          '',
+                          '60th Wedding',
+                          'Baby Shower',
+                          'Birthday',
+                          'Corporate Events',
+                          'Ear Piercing Ceremony',
+                          'Engagement',
+                          'Get together',
+                          'House Warming',
+                          'Naming Ceremony',
+                          'Outdoor Post-Wedding',
+                          'Outdoor Pre-Wedding',
+                          'Puberty',
+                          'Reception',
+                          'Religious Events',
+                          'Rituals - Bride',
+                          'Rituals - Groom',
+                          'Wedding & Reception',
+                        ]
                             .map((type) => DropdownMenuItem(value: type.isEmpty ? null : type, child: Text(type.isEmpty ? 'None' : type)))
                             .toList(),
                         onChanged: (value) {
