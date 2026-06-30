@@ -44,7 +44,6 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
   final _emailCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
-  final Set<String> _selectedServices = {};
   final List<BookingEvent> _events = [];
 
   @override
@@ -71,6 +70,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
     'Rituals - Bride',
     'Rituals - Groom',
     'Wedding',
+    'Wedding & Reception',
   ];
 
   static const List<String> _availableServices = [
@@ -334,9 +334,9 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
   }
 
   Future<void> _submitQuoteRequest(Company defaultCompany) async {
-    if (_selectedServices.isEmpty) {
+    if (_events.every((e) => e.selectedServices.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one service.')),
+        const SnackBar(content: Text('Please select at least one service for your events.')),
       );
       return;
     }
@@ -377,7 +377,8 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         final idx = entry.key + 1;
         final event = entry.value;
         final dateStr = event.date != null ? dateFormatter.format(event.date!) : 'TBD';
-        return 'Event $idx: ${event.shootType} on $dateStr at ${event.venueCtrl.text.trim()}';
+        final servicesStr = event.selectedServices.isEmpty ? 'None' : event.selectedServices.join(', ');
+        return 'Event $idx: ${event.shootType} on $dateStr at ${event.venueCtrl.text.trim()}\n  Services: $servicesStr';
       }).join('\n');
 
       final combinedNotes = 'Event Schedule:\n$eventsSummary\n\n'
@@ -392,18 +393,23 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         address: primaryShootVenue,
       );
 
-      // Create Quote Invoice Items
-      final invoiceItems = _selectedServices.map((serviceName) {
-        final matchingItem = widget.studioItems.firstWhere(
-          (item) => item.name.toLowerCase() == serviceName.toLowerCase(),
-          orElse: () => StudioItem(id: '', name: serviceName, price: 0.0),
-        );
-        return InvoiceItem(
-          description: serviceName,
-          quantity: 1.0,
-          price: matchingItem.price,
-        );
-      }).toList();
+      // Create Quote Invoice Items from per-event selections
+      final List<InvoiceItem> invoiceItems = [];
+      for (final event in _events) {
+        for (final serviceName in event.selectedServices) {
+          final matchingItem = widget.studioItems.firstWhere(
+            (item) => item.name.toLowerCase() == serviceName.toLowerCase(),
+            orElse: () => StudioItem(id: '', name: serviceName, price: 0.0),
+          );
+          invoiceItems.add(
+            InvoiceItem(
+              description: '$serviceName - ${event.shootType}',
+              quantity: 1.0,
+              price: matchingItem.price,
+            ),
+          );
+        }
+      }
 
       // Auto-generate invoice number (Quote format Q-YYYYMMDDHHMM)
       final quoteNumber = 'Q-${DateTime.now().year}'
@@ -440,7 +446,7 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
         address: primaryShootVenue,
         eventDate: _events.map((e) => e.date != null ? dateFormatter.format(e.date!) : 'TBD').join(', '),
         priority: 'High',
-        reference: 'Quote Requested:\n$eventsSummary\n\nServices: ${_selectedServices.join(", ")}',
+        reference: 'Quote Requested:\n$eventsSummary',
       );
       await widget.store.saveLead(lead);
 
@@ -460,7 +466,6 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
 
   void _resetForm() {
     setState(() {
-      _selectedServices.clear();
       for (final event in _events) {
         event.dispose();
       }
@@ -872,6 +877,83 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                             ),
                             validator: requiredField,
                           ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Services Required for this Event *',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E3A8A)),
+                          ),
+                          const SizedBox(height: 10),
+                          LayoutBuilder(
+                            builder: (context, gridConstraints) {
+                              final cols = gridConstraints.maxWidth >= 500 ? 2 : 1;
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: cols,
+                                  crossAxisSpacing: 6,
+                                  mainAxisSpacing: 6,
+                                  childAspectRatio: cols == 2 ? 6.2 : 9.5,
+                                ),
+                                itemCount: _availableServices.length,
+                                itemBuilder: (context, idx) {
+                                  final service = _availableServices[idx];
+                                  final isSelected = event.selectedServices.contains(service);
+                                  return InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        if (isSelected) {
+                                          event.selectedServices.remove(service);
+                                        } else {
+                                          event.selectedServices.add(service);
+                                        }
+                                      });
+                                    },
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFF2563EB).withOpacity(0.08)
+                                            : Colors.white.withOpacity(0.4),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? const Color(0xFF2563EB)
+                                              : Colors.grey.shade300,
+                                          width: isSelected ? 1.5 : 1.0,
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            isSelected
+                                                ? Icons.check_box_outlined
+                                                : Icons.check_box_outline_blank,
+                                            color: isSelected
+                                                ? const Color(0xFF2563EB)
+                                                : Colors.grey.shade600,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              service,
+                                              style: TextStyle(
+                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                color: isSelected ? const Color(0xFF1E3A8A) : Colors.black87,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ],
                       ),
                     );
@@ -898,83 +980,6 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
                       alignLabelWithHint: true,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Services Required *',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A)),
-                  ),
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, gridConstraints) {
-                      final cols = gridConstraints.maxWidth >= 600 ? 2 : 1;
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: cols,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: cols == 2 ? 4.5 : 5.5,
-                        ),
-                        itemCount: _availableServices.length,
-                        itemBuilder: (context, index) {
-                          final service = _availableServices[index];
-                          final isSelected = _selectedServices.contains(service);
-                          return InkWell(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedServices.remove(service);
-                                } else {
-                                  _selectedServices.add(service);
-                                }
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFF2563EB).withOpacity(0.08)
-                                    : Colors.white.withOpacity(0.4),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF2563EB)
-                                      : Colors.grey.shade300,
-                                  width: isSelected ? 2.0 : 1.0,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    isSelected
-                                        ? Icons.check_box_outlined
-                                        : Icons.check_box_outline_blank,
-                                    color: isSelected
-                                        ? const Color(0xFF2563EB)
-                                        : Colors.grey.shade600,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      service,
-                                      style: TextStyle(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        color: isSelected ? const Color(0xFF1E3A8A) : Colors.black87,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
                 ],
               );
             },
@@ -999,31 +1004,48 @@ class _ClientBookingPageState extends State<ClientBookingPage> {
             ),
             const Divider(height: 24),
             
-            // Services list
-            if (_selectedServices.isNotEmpty) ...[
-              ..._selectedServices.map((serviceName) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline, size: 16, color: Colors.green),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          serviceName,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            // Services list grouped by event
+            ..._events.map((event) {
+              if (event.selectedServices.isEmpty) return const SizedBox.shrink();
+              final dateStr = event.date != null ? dateFormatter.format(event.date!) : 'TBD';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${event.shootType} ($dateStr)',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E3A8A)),
+                    ),
+                    const SizedBox(height: 6),
+                    ...event.selectedServices.map((serviceName) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4.0, left: 8.0),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                serviceName,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ] else ...[
+                      );
+                    }),
+                  ],
+                ),
+              );
+            }),
+            
+            // Fallback if no services selected at all
+            if (_events.every((e) => e.selectedServices.isEmpty))
               const Text(
                 'No services selected',
                 style: TextStyle(color: Colors.black54, fontStyle: FontStyle.italic),
               ),
-            ],
             
             const SizedBox(height: 24),
             
@@ -1105,11 +1127,14 @@ class BookingEvent {
     this.shootType = 'Wedding',
     this.date,
     String venue = '',
-  }) : venueCtrl = TextEditingController(text: venue);
+    Set<String>? selectedServices,
+  }) : venueCtrl = TextEditingController(text: venue),
+       selectedServices = selectedServices ?? {};
 
   String? shootType;
   DateTime? date;
   final TextEditingController venueCtrl;
+  final Set<String> selectedServices;
 
   void dispose() {
     venueCtrl.dispose();

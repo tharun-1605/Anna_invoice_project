@@ -460,6 +460,7 @@ dropdownColor: Colors.white.withValues(alpha: 0.95),
                           'Rituals - Bride',
                           'Rituals - Groom',
                           'Wedding',
+                          'Wedding & Reception',
                         ]
                             .map((type) => DropdownMenuItem(value: type.isEmpty ? null : type, child: Text(type.isEmpty ? 'None' : type)))
                             .toList(),
